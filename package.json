@@ -1,7 +1,14 @@
 {
-  "name": "sample-project",
+  "name": "weave",
   "version": "0.0.1",
-  "description": "sample js template: change package.json",
+  "description": "Client library to talk to weave-based blockchain apps",
+  "author": "Ethan Frey <ethanfrey@users.noreply.github.com>",
+  "license": "Apache-2.0",
+  "keywords": [
+    "confio",
+    "blockchain",
+    "lightclient"
+  ],
   "main": "index.js",
   "scripts": {
     "test": "jest",
@@ -14,11 +21,13 @@
     "build:lib": "npm run build && npm run build:min",
     "prepublishOnly": "npm test && rimraf lib/** && npm run build:lib"
   },
-  "author": "Ethan Frey <ethanfrey@users.noreply.github.com>",
-  "license": "Apache-2.0",
   "dependencies": {
     "deep-equal": "^1.0.1",
-    "stacktrace-js": "^2.0.0"
+    "ed25519-supercop": "^1.0.2",
+    "protobufjs": "^6.8.6",
+    "stacktrace-js": "^2.0.0",
+    "supercop.js": "^2.0.1",
+    "tendermint": "^2.0.5"
   },
   "devDependencies": {
     "babel-core": "^6.23.1",
@@ -40,13 +49,19 @@
     "webpack-node-externals": "^1.5.4",
     "worker-loader": "^0.8.0"
   },
+  "browser": {
+    "ed25519-supercop": "supercop.js"
+  },
   "repository": {
-    "url": "https://github.com/ethanfrey/js-template.git",
+    "url": "git+https://github.com/confio/weave-js.git",
     "type": "git"
   },
+  "bugs": {
+    "url": "https://github.com/confio/weave-js/issues"
+  },
+  "homepage": "https://github.com/confio/weave-js#readme",
   "jest": {
-    "setupFiles": [
-    ],
+    "setupFiles": [],
     "moduleNameMapper": {
       "\\.(css|scss|jpg|png)$": "<rootDir>/test/helpers/empty-module.js"
     },
