@@ -8,18 +8,16 @@ let protoPath = path.resolve(__dirname, "mycoind.proto");
 
 async function walletClass() {
     if (_wallet == null) {
-        _wallet = await protobuf.load(protoPath)
-                                .then(root => root.lookupType("mycoin.Set"))
-                                // .catch(err => console.log("Err:" + err));
+        let root = await protobuf.load(protoPath)
+        _wallet = root.lookupType("mycoin.Set")
     }
     return _wallet;
 }
 
 async function sendMsgClass() {
     if (_sendMsg == null) {
-        _sendMsg = await protobuf.load(protoPath)
-                                 .then(root => root.lookupType("mycoin.SendMsg"))
-                                // .catch(err => console.log("Err:" + err));
+        let root = await protobuf.load(protoPath)
+        _sendMsg = root.lookupType("mycoin.SendMsg")
     }
     return _sendMsg;
 }
