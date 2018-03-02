@@ -35,21 +35,21 @@ describe('Crypto primitives', () => {
         const addr = getAddress(gopubkey);
         expect(addr).toEqual(goaddr);
 
-        const privBuf = Buffer.from(goprivkey, 'hex');
-        const pubBuf = Buffer.from(gopubkey, 'hex');
-        const pub = publicKey(privBuf);
-        const calcBuf = Buffer.from(pub);
-        expect(calcBuf).toEqual(pubBuf);
+        // Make them Uint8Array....
+        const priv = Buffer.from(goprivkey, 'hex');
+        const pub = Buffer.from(gopubkey, 'hex');
+        const calc = publicKey(priv);
+        expect(Buffer.from(calc)).toEqual(pub);
 
         const msg = Buffer.from(gotx, 'hex');
         const data = signBytes(msg, gochain, goseq);
 
-        const sigBuf = Buffer.from(gosig, 'hex');
-        expect(verify(data, sigBuf, pubBuf)).toEqual(true);
+        const sig = Uint8Array.from(Buffer.from(gosig, 'hex'));
+        expect(verify(data, sig, pub)).toEqual(true);
 
-        let sig = sign(data, privBuf);
-        expect(verify(data, sig, pubBuf)).toEqual(true);
-        expect(Buffer.from(sig)).toEqual(sigBuf);
+        let mySig = sign(data, priv);
+        expect(verify(data, mySig, pub)).toEqual(true);
+        expect(mySig).toEqual(sig);
     });
 
     /*
