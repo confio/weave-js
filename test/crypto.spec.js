@@ -23,8 +23,6 @@ describe('Crypto primitives', () => {
         const pub = publicKey(keys.secret);
         expect(pub).toEqual(keys.pubkey);
 
-        // let addr = getAddress(keys.pubkey);
-
         const msg = Buffer.from(gotx, 'hex');
         const data = signBytes(msg, gochain, goseq);
         let sig = sign(data, keys.secret);
@@ -45,16 +43,20 @@ describe('Crypto primitives', () => {
 
         const msg = Buffer.from(gotx, 'hex');
         const data = signBytes(msg, gochain, goseq);
-        // const sigBuf = Buffer.from(gosig, 'hex');
-        // expect(verify(msg, sigBuf, pubBuf)).toEqual(true);
+
+        const sigBuf = Buffer.from(gosig, 'hex');
+        expect(verify(data, sigBuf, pubBuf)).toEqual(true);
 
         let sig = sign(data, privBuf);
         expect(verify(data, sig, pubBuf)).toEqual(true);
-        // expect(sig).toEqual(gosig);
-
-        console.log(Buffer.from(sig).toString('hex'));
-        console.log("");
-        console.log(gosig);
+        expect(Buffer.from(sig)).toEqual(sigBuf);
     });
 
+    /*
+    What's up with these signing differences????
+
+    https://github.com/dchest/tweetnacl-js/blob/master/nacl.js#L762-L765
+    https://github.com/golang/crypto/blob/master/ed25519/ed25519.go#L108-L110
+
+    */
 });

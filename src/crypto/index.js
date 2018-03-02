@@ -1,12 +1,5 @@
 import crypto from 'crypto';
 
-// // fallback module
-// let ed25519 = require('supercop.js')
-// try {
-//   // try to load native version
-//   ed25519 = require('ed25519-supercop')
-// } catch (err) {}
-
 import {sign as ed25519} from 'tweetnacl';
 
 // getAddress accepts a hex formatted pubkey
@@ -37,8 +30,8 @@ export function signBytes(msg, chainID, seq) {
     const extra = Buffer.alloc(chainID.length + 8);
     extra.write(chainID);
     // TODO: handle 64 bytes...
-    extra.writeUInt32BE(0, 0);
-    extra.writeUInt32BE(seq, 0);
+    extra.writeUInt32BE(0, chainID.length);
+    extra.writeUInt32BE(seq, chainID.length+4);
 
     const total = msg.length + extra.length;
     const res = Buffer.concat([msg, extra], total);

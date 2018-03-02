@@ -23,10 +23,9 @@
   },
   "dependencies": {
     "deep-equal": "^1.0.1",
-    "ed25519-supercop": "^1.0.2",
+    "js-nacl": "^1.2.2",
     "protobufjs": "^6.8.6",
     "stacktrace-js": "^2.0.0",
-    "supercop.js": "^2.0.1",
     "tendermint": "^2.0.5",
     "tweetnacl": "^1.0.0"
   },
