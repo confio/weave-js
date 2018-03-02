@@ -1,6 +1,20 @@
 import crypto from 'crypto';
 
-import {sign as ed25519} from 'tweetnacl';
+// import {sign as ed25519} from 'tweetnacl';
+import nacl_factory from 'js-nacl';
+
+let ed25519 = null;
+
+function loadNacl(opts) {
+    return new Promise((res, rej) => {
+        nacl_factory.instantiate(nacl => res(nacl), opts)
+    });
+}
+
+// init must be called before any other functions
+export async function initNacl(opts) {
+    ed25519 = await loadNacl(opts);
+}
 
 // getAddress accepts a hex formatted pubkey
 export function getAddress (pubkey) {
@@ -13,17 +27,20 @@ export function getAddress (pubkey) {
 export function generateSeedKeys() {
     // let seed = ed25519.createSeed();
     // let keypair = ed25519.createKeyPair(seed)
-    let keypair = ed25519.keyPair();
+    let keypair = ed25519.crypto_sign_keypair();
     return {
-        pubkey: keypair.publicKey,
-        secret: keypair.secretKey
+        pubkey: keypair.signPk,
+        secret: keypair.signSk
     }
 }
 
-export function publicKey(secretKey) {
-    let keypair = ed25519.keyPair.fromSecretKey(secretKey);
-    return keypair.publicKey;
-}
+// nacl.crypto_sign_seed_keypair(Uint8Array) → {"signPk": Uint8Array, "signSk": Uint8Array}
+
+
+// export function publicKey(secretKey) {
+//     let keypair = ed25519.keyPair.fromSecretKey(secretKey);
+//     return keypair.publicKey;
+// }
 
 // signBytes creates a replay protected sign bytes, which we use
 export function signBytes(msg, chainID, seq) {
@@ -39,9 +56,9 @@ export function signBytes(msg, chainID, seq) {
 }
 
 export function sign(msg, secret) {
-    return ed25519.detached(msg, secret);
+    return ed25519.crypto_sign_detached(msg, secret);
 }
 
 export function verify(msg, sig, pubkey) {
-    return ed25519.detached.verify(msg, sig, pubkey);
+    return ed25519.crypto_sign_verify_detached(sig, msg, pubkey);
 }
