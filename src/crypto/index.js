@@ -1,32 +1,35 @@
-// import sha256 from 'crypto-js/sha256';
-// import hexer from 'crypto-js/enc-hex';
 import crypto from 'crypto';
 
-// fallback module
-let ed25519 = require('supercop.js')
-try {
-  // try to load native version
-  ed25519 = require('ed25519-supercop')
-} catch (err) {}
+// // fallback module
+// let ed25519 = require('supercop.js')
+// try {
+//   // try to load native version
+//   ed25519 = require('ed25519-supercop')
+// } catch (err) {}
 
+import {sign as ed25519} from 'tweetnacl';
 
 // getAddress accepts a hex formatted pubkey
 export function getAddress (pubkey) {
     const hash = crypto.createHash('sha256');
     hash.update(pubkey, 'hex');
     let hex = hash.digest('hex');
-    // let hex = sha256(pubkey).toString(hexer);
     return hex.slice(0, 40);  // 20 bytes
 }
 
 export function generateSeedKeys() {
-    let seed = ed25519.createSeed();
-    let keypair = ed25519.createKeyPair(seed)
+    // let seed = ed25519.createSeed();
+    // let keypair = ed25519.createKeyPair(seed)
+    let keypair = ed25519.keyPair();
     return {
-        seed: seed.toString('hex'),
-        pubkey: keypair.publicKey.toString('hex'),
-        secret: keypair.secretKey.toString('hex')
+        pubkey: keypair.publicKey,
+        secret: keypair.secretKey
     }
+}
+
+export function publicKey(secretKey) {
+    let keypair = ed25519.keyPair.fromSecretKey(secretKey);
+    return keypair.publicKey;
 }
 
 // signBytes creates a replay protected sign bytes, which we use
@@ -42,10 +45,10 @@ export function signBytes(msg, chainID, seq) {
     return res;
 }
 
-export function sign(msg, pubkey, secret) {
-    return ed25519.sign(msg, pubkey, secret).toString('hex');
+export function sign(msg, secret) {
+    return ed25519.detached(msg, secret);
 }
 
-export function verify(sig, msg, pubkey) {
-    return ed25519.verify(sig, msg, pubkey);
+export function verify(msg, sig, pubkey) {
+    return ed25519.detached.verify(msg, sig, pubkey);
 }

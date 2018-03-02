@@ -1,4 +1,4 @@
-import { generateSeedKeys, signBytes, sign, verify, getAddress } from '../src/crypto';
+import { generateSeedKeys, publicKey, signBytes, sign, verify, getAddress } from '../src/crypto';
 
 // unsigned_tx.bin
 let gotx = "0a440a14eddea5bddec757e27b7e70fb9468cb678589e2431214539ac8bc8eeb506cd42e66e8b5508f222b08f45a1a0808fa011a03455448220c54657374207061796d656e74";
@@ -19,15 +19,17 @@ let gochain = "test-123";
 
 describe('Crypto primitives', () => {
     it('Sign and verify', () => {
-        let keys = generateSeedKeys();
+        const keys = generateSeedKeys();
+        const pub = publicKey(keys.secret);
+        expect(pub).toEqual(keys.pubkey);
 
-        let addr = getAddress(keys.pubkey);
+        // let addr = getAddress(keys.pubkey);
 
         const msg = Buffer.from(gotx, 'hex');
         const data = signBytes(msg, gochain, goseq);
-        let sig = sign(data, keys.pubkey, keys.secret);
+        let sig = sign(data, keys.secret);
 
-        expect(verify(sig, data, keys.pubkey)).toEqual(true);
+        expect(verify(data, sig, keys.pubkey)).toEqual(true);
     });
 
     it('Check golang compatibility', () => {
@@ -35,14 +37,24 @@ describe('Crypto primitives', () => {
         const addr = getAddress(gopubkey);
         expect(addr).toEqual(goaddr);
 
+        const privBuf = Buffer.from(goprivkey, 'hex');
+        const pubBuf = Buffer.from(gopubkey, 'hex');
+        const pub = publicKey(privBuf);
+        const calcBuf = Buffer.from(pub);
+        expect(calcBuf).toEqual(pubBuf);
+
         const msg = Buffer.from(gotx, 'hex');
         const data = signBytes(msg, gochain, goseq);
-        const data2 = signBytes(msg, gochain, goseq);
-        // expect(verify(gosig, msg, gopubkey)).toEqual(true);
+        // const sigBuf = Buffer.from(gosig, 'hex');
+        // expect(verify(msg, sigBuf, pubBuf)).toEqual(true);
 
-        let sig = sign(data, gopubkey, goprivkey);
-        // expect(verify(sig, data2, gopubkey)).toEqual(true);
+        let sig = sign(data, privBuf);
+        expect(verify(data, sig, pubBuf)).toEqual(true);
         // expect(sig).toEqual(gosig);
+
+        console.log(Buffer.from(sig).toString('hex'));
+        console.log("");
+        console.log(gosig);
     });
 
 });

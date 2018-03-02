@@ -22,13 +22,13 @@
     "prepublishOnly": "npm test && rimraf lib/** && npm run build:lib"
   },
   "dependencies": {
-    "crypto-js": "^3.1.9-1",
     "deep-equal": "^1.0.1",
     "ed25519-supercop": "^1.0.2",
     "protobufjs": "^6.8.6",
     "stacktrace-js": "^2.0.0",
     "supercop.js": "^2.0.1",
-    "tendermint": "^2.0.5"
+    "tendermint": "^2.0.5",
+    "tweetnacl": "^1.0.0"
   },
   "devDependencies": {
     "babel-core": "^6.23.1",
