@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package mycoin;
+
+//------------------ Cash -------------------
+
+// Coin can hold any amount between -1 billion and +1 billion
+// at steps of 10^-9. It is a fixed-point decimal
+// representation and uses integers to avoid rounding
+// associated with floats.
+//
+// Every code has a denomination, which is just a
+//
+// If you want anything more complex, you should write your
+// own type, possibly borrowing from this code.
+message Coin {
+    // Whole coins, -10^9 < integer < 10^9
+    int32 integer = 1;
+    // Billionth of coins. 0 <= abs(fractional) < 10^9
+    // If fractional != 0, must have same sign as integer
+    int32 fractional = 2;
+    // CurrencyCode is 3-4 upper-case letters and
+    // all Coins of the same currency can be combined
+    string currency_code = 3;
+    // Issuer is optional string, maybe chain_id? maybe custodian name?
+    // can be empty. tokens are only fungible if CurrencyCode and
+    // Issuer both match.
+    string issuer = 4;
+}
+
+// Set may contain Coin of many different currencies.
+// It handles adding and subtracting sets of currencies.
+message Set {
+    repeated Coin coins = 1;
+}
+
+// SendMsg is a request to move these coins from the given
+// source to the given destination address.
+// memo is an optional human-readable message
+// ref is optional binary data, that can refer to another
+// eg. tx hash
+message SendMsg {
+    bytes src = 1;
+    bytes dest = 2;
+    Coin amount = 3;
+    // max length 128 character
+    string memo = 4;
+    // max length 64 bytes
+    bytes ref = 5;
+}
+
+// FeeInfo records who pays what fees to have this
+// message processed
+message FeeInfo {
+    bytes payer = 1;
+    Coin fees = 2;
+}
+
+//------------------ Sigs -------------------
+
+// UserData just stores the data and is used for serialization.
+//
+// Note: This should not be created from outside the module,
+// User is the entry point you want
+message UserData {
+  PublicKey pub_key = 1;
+  int64 sequence = 2;
+}
+
+// StdSignature represents the signature, the identity of the signer
+// (either the PubKey or the Address), and a sequence number to
+// prevent replay attacks.
+//
+// A given signer must submit transactions with the sequence number
+// increasing by 1 each time (starting at 0)
+message StdSignature {
+    int64 Sequence = 1;
+    // PubKey required if Sequence == 0
+    PublicKey PubKey = 2;
+    // Address required if PubKey is not present
+    bytes Address = 3;
+    Signature Signature = 4;
+}
+
+//------------------ Crypto -------------------
+
+message PublicKey {
+  oneof pub{
+    bytes ed25519 = 1;
+  };
+}
+
+message PrivateKey {
+  oneof priv{
+    bytes ed25519 = 1;
+  };
+}
+
+message Signature {
+  oneof sig{
+    bytes ed25519 = 1;
+  };
+}
+
+//------------------ Tx -------------------
+
+message Tx {
+  // msg is a sum type over all allowed messages on this chain.
+  oneof sum{
+    SendMsg send_msg = 1;
+    // space here to allow many more....
+  }
+  // fee info, autogenerates GetFees()
+  FeeInfo fees = 20;
+  // signatures, autogenerates GetSignatures()
+  repeated StdSignature signatures = 21;
+}
+
+
+
+
