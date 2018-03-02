@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package cash;
+package mycoin;
 
 // Set may contain Coin of many different currencies.
 // It handles adding and subtracting sets of currencies.

@@ -1,20 +1,31 @@
 let protobuf = require("protobufjs");
 
+let _acccountMessage = null;
 
-export function loadAccount(cb) {
-    // init logic
-    protobuf.load("account.proto", function(err, root) {
-        if (err) {
-            return cb(err);
-        }
+// TODO: something better!!!
+let protoPath = "/Users/ethan/golang/src/github.com/confio/weave-js/src/proto/account.proto";
 
-        // Obtain a message type
-        let AccountMessage = root.lookupType("cash.Set");
-        return cb(nil, AccountMessage);
+async function accountClass() {
+    if (_acccountMessage == null) {
+        console.log("parse __accountMessage");
+        _acccountMessage = await protobuf.load(protoPath)
+                                .then(root => root.lookupType("mycoin.Set"))
+                                // .catch(err => console.log("Err:" + err));
     }
+    return _acccountMessage;
 }
 
-export function parseAccount(buffer) {
-  let decodedMessage = AccountMessage.decode(buffer);
-  return decodedMessage
+export async function parseAccount(buffer) {
+    let Account = await accountClass();
+    let decodedMessage = Account.decode(buffer);
+    return Account.toObject(decodedMessage);
+}
+
+export async function serializeAccount(obj) {
+    let Account = await accountClass();
+    let err = Account.verify(obj);
+    if (err) throw Error(err);
+
+    let buffer = Account.encode(obj).finish();
+    return buffer;
 }
