@@ -1,13 +1,12 @@
-let protobuf = require("protobufjs");
+import protobuf from "protobufjs";
+import path from "path";
 
 let _acccountMessage = null;
 
-// TODO: something better!!!
-let protoPath = "/Users/ethan/golang/src/github.com/confio/weave-js/src/proto/account.proto";
+let protoPath = path.resolve(__dirname, "account.proto");
 
 async function accountClass() {
     if (_acccountMessage == null) {
-        console.log("parse __accountMessage");
         _acccountMessage = await protobuf.load(protoPath)
                                 .then(root => root.lookupType("mycoin.Set"))
                                 // .catch(err => console.log("Err:" + err));

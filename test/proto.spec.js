@@ -1,10 +1,16 @@
+import fs from "fs";
+import path from "path";
 import { parseAccount, serializeAccount } from '../src/proto';
 
-// NOTE: go output uses currency_code, js currencyCode, must translate
-let jsonAccount = `{"coins":[{"integer":50000,"currencyCode":"ETH"},{"integer":150,"fractional":567000,"currencyCode":"BTC"}]}`;
-let hexAccount = "0a0908d086031a034554480a0c08960110d8cd221a03425443"
-
 describe('Protobuf account', () => {
+    let accountJSON = path.resolve(__dirname, "data", "account.json");
+    let accountBin = path.resolve(__dirname, "data", "account.bin");
+
+    // NOTE: go output uses currency_code, js currencyCode, must translate
+    let jsonAccount = fs.readFileSync(accountJSON, 'utf8')
+                        .replace(/currency_code/g, "currencyCode");
+    let hexAccount = fs.readFileSync(accountBin, 'hex');
+
     it('Serialize json to protobuf', async () => {
         let obj = JSON.parse(jsonAccount);
         let buffer = await serializeAccount(obj);
