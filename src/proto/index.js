@@ -23,7 +23,7 @@ export async function loadOneModel(filepath, packageName, msg) {
 
 export function pbToObj(msgClass, buffer) {
     let decodedMessage = msgClass.decode(buffer);
-    return msgClass.toObject(decodedMessage, {bytes: String});
+    return msgClass.toObject(decodedMessage, {bytes: String, longs: Number});
 }
 
 export function objToPB(msgClass, obj) {
