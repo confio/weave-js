@@ -33,7 +33,6 @@ describe('Crypto primitives', () => {
         const goprivkey = await loadFixtures("priv_key");
         const gopubkey = await loadFixtures("pub_key");
 
-        
         // This loads keys as buffers
         const txSig = models.Tx.decode(gosigned.pbBuffer()).signatures[0];
         const priv = models.PrivateKey.decode(goprivkey.pbBuffer()).ed25519;

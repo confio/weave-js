@@ -15,8 +15,7 @@ const flatSig = (idx) => flatten(
     ['signatures', idx, 'Signature', 'Sig', 'Ed25519'], 
     ['signatures', idx, 'Signature', 'ed25519'], 
     ['signatures', idx, 'Signature', 'Sig']);
-// const flatTx = manyFlat(flatSend, flatSig(0), flatSig(1), flatSig(2));
-const flatTx = manyFlat(flatSend, flatSig(0));
+const flatTx = manyFlat(flatSend, flatSig(0), flatSig(1), flatSig(2));
 
 export let transforms = {
     flatPrivKey, flatPubKey, flatUser, flatSend, flatTx
