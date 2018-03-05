@@ -31,15 +31,18 @@ export function generateKeyPair() {
     }
 }
 
+
 // signBytes takes raw message byters and append replay-protection info
 // to determine the bytes we need to sign.
 // returns a Buffer with the bytes to sign
 export function signBytes(msg, chainID, seq) {
+    const thirtyTwo = (2**32);
     const extra = Buffer.alloc(chainID.length + 8);
+    let high = Math.floor(seq/thirtyTwo)
+
     extra.write(chainID);
-    // TODO: handle 64 bytes...
-    extra.writeUInt32BE(0, chainID.length);
-    extra.writeUInt32BE(seq, chainID.length+4);
+    extra.writeUInt32BE(high, chainID.length);
+    extra.writeUInt32BE(seq%thirtyTwo, chainID.length+4);
 
     const total = msg.length + extra.length;
     const res = Buffer.concat([msg, extra], total);
