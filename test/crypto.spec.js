@@ -1,4 +1,4 @@
-import { initNacl, generateSeedKeys, signBytes, sign, verify, getAddress } from '../src/crypto';
+import { initNacl, generateKeyPair, signBytes, sign, verify, getAddress } from '../src/crypto';
 
 // unsigned_tx.bin
 let gotx = "0a440a14eddea5bddec757e27b7e70fb9468cb678589e2431214539ac8bc8eeb506cd42e66e8b5508f222b08f45a1a0808fa011a03455448220c54657374207061796d656e74";
@@ -21,7 +21,7 @@ describe('Crypto primitives', () => {
     it('Sign and verify', async () => {
         await initNacl();
 
-        const keys = generateSeedKeys();
+        const keys = generateKeyPair();
         const msg = Buffer.from(gotx, 'hex');
         const data = signBytes(msg, gochain, goseq);
         let sig = sign(data, keys.secret);

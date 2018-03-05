@@ -38,14 +38,14 @@ describe('Protobuf wallet', () => {
 });
 
 function loadJSON(filename) {
-    let filepath = path.resolve(__dirname, "data", filename) + ".json";
+    let filepath = path.resolve(__dirname, "fixtures", filename) + ".json";
     let data = fs.readFileSync(filepath, 'utf8')
                  .replace(/currency_code/g, "currencyCode");
     return data;
 }
 
 function loadPB(filename) {
-    let filepath = path.resolve(__dirname, "data", filename) + ".bin";
+    let filepath = path.resolve(__dirname, "fixtures", filename) + ".bin";
     let data = fs.readFileSync(filepath, 'hex');
     return data;
 }

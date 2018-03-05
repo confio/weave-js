@@ -5,18 +5,16 @@ import nacl_factory from 'js-nacl';
 
 let ed25519 = null;
 
-function loadNacl(opts) {
+// init must be called and the promise resolved before any other functions are called
+export function initNacl(opts) {
     return new Promise((res, rej) => {
-        nacl_factory.instantiate(nacl => res(nacl), opts)
+        let setup = nacl => { ed25519 = nacl; res(nacl) }
+        nacl_factory.instantiate(setup, opts)
     });
 }
 
-// init must be called before any other functions
-export async function initNacl(opts) {
-    ed25519 = await loadNacl(opts);
-}
-
-// getAddress accepts a hex formatted pubkey
+// getAddress accepts pubkey as a hex-formatted string or a Buffer
+// returns the address as a hex string
 export function getAddress (pubkey) {
     const hash = crypto.createHash('sha256');
     hash.update(pubkey, 'hex');
@@ -24,9 +22,8 @@ export function getAddress (pubkey) {
     return hex.slice(0, 40);  // 20 bytes
 }
 
-export function generateSeedKeys() {
-    // let seed = ed25519.createSeed();
-    // let keypair = ed25519.createKeyPair(seed)
+// generateKeyPair creates a private/public key pair
+export function generateKeyPair() {
     let keypair = ed25519.crypto_sign_keypair();
     return {
         pubkey: keypair.signPk,
@@ -34,15 +31,9 @@ export function generateSeedKeys() {
     }
 }
 
-// nacl.crypto_sign_seed_keypair(Uint8Array) → {"signPk": Uint8Array, "signSk": Uint8Array}
-
-
-// export function publicKey(secretKey) {
-//     let keypair = ed25519.keyPair.fromSecretKey(secretKey);
-//     return keypair.publicKey;
-// }
-
-// signBytes creates a replay protected sign bytes, which we use
+// signBytes takes raw message byters and append replay-protection info
+// to determine the bytes we need to sign.
+// returns a Buffer with the bytes to sign
 export function signBytes(msg, chainID, seq) {
     const extra = Buffer.alloc(chainID.length + 8);
     extra.write(chainID);
