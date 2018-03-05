@@ -5,14 +5,15 @@ import path from "path";
 // and accepts a list of strings (messages)
 //
 // returns an object with a protobufjs.Message class for each message listed
-export async function loadModels(filepath, packageName, messages) {
-    let res = {};
-    let root = await protobuf.load(filepath)
-    for (let msg of messages) {
-        let name = packageName + "." + msg;
-        res[msg] = root.lookupType(name);
-    }
-    return res 
+export function loadModels(filepath, packageName, messages) {
+    return protobuf.load(filepath).then(root => {
+        let res = {};
+        for (let msg of messages) {
+            let name = packageName + "." + msg;
+            res[msg] = root.lookupType(name);
+        }
+        return res;
+    });
 }
 
 export async function loadOneModel(filepath, packageName, msg) {

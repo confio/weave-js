@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 
-// import {sign as ed25519} from 'tweetnacl';
 import nacl_factory from 'js-nacl';
 
 let ed25519 = null;
