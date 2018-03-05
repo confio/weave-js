@@ -1,28 +1,23 @@
+import path from "path";
+import {loadFixtures} from './helpers/fixtures';
+import {transforms, manyFlat, flatten} from './helpers/transform';
+
+import { loadModels, pbToObj, objToPB} from '../src/proto';
 import { initNacl, generateKeyPair, signBytes, sign, verify, getAddress } from '../src/crypto';
 
-// unsigned_tx.bin
-let gotx = "0a440a14eddea5bddec757e27b7e70fb9468cb678589e2431214539ac8bc8eeb506cd42e66e8b5508f222b08f45a1a0808fa011a03455448220c54657374207061796d656e74";
-
-// privkey.bin (w/o field headers)
-let goprivkey = "9f610af057013d5b406fd17842dfdadc22aa7504fa9f9d1f249a83ff8cd7ec3881df5cb5a0784b3ba0f41786ccca09910617d0eef7818e2c7f6a0d8ea5e2da7e";
-
-// pubkey.bin (w/o field headers)
-let gopubkey = "81df5cb5a0784b3ba0f41786ccca09910617d0eef7818e2c7f6a0d8ea5e2da7e";
-
-// extracted from signed_tx.bin
-let goaddr = "eddea5bddec757e27b7e70fb9468cb678589e243"
-let gosig = "40073fa53ff4c6f8e572c56bd3edf9dcd46537a81eb618507e57a8d9b86f7ee493fbc87e179733ff30f8bc83a51b6faafafb06730c57efc6ba19d2132abbaa08"
-
-// to check sig
-let goseq = 17;
-let gochain = "test-123";
+let protoPath = path.resolve(__dirname, "fixtures", "mycoind.proto");
 
 describe('Crypto primitives', () => {
+    // to check sig (used to generate fixtures)
+    let goseq = 17;
+    let gochain = "test-123";
+
     it('Sign and verify', async () => {
         await initNacl();
-
+        const gotx = await loadFixtures("unsigned_tx"); 
+        
         const keys = generateKeyPair();
-        const msg = Buffer.from(gotx, 'hex');
+        const msg = Buffer.from(gotx.pbHex, 'hex');
         const data = signBytes(msg, gochain, goseq);
         let sig = sign(data, keys.secret);
 
@@ -31,18 +26,28 @@ describe('Crypto primitives', () => {
 
     it('Check golang compatibility', async () => {
         await initNacl();
+        const models = await loadModels(protoPath, "mycoin", ["PrivateKey", "PublicKey", "Tx", "StdSignature"]);
+    
+        const gotx = await loadFixtures("unsigned_tx"); 
+        const gosigned = await loadFixtures("signed_tx"); 
+        const goprivkey = await loadFixtures("priv_key");
+        const gopubkey = await loadFixtures("pub_key");
 
-        // make sure we calculate addresses the same
-        const addr = getAddress(gopubkey);
-        expect(addr).toEqual(goaddr);
+        
+        // This loads keys as buffers
+        const txSig = models.Tx.decode(gosigned.pbBuffer()).signatures[0];
+        const priv = models.PrivateKey.decode(goprivkey.pbBuffer()).ed25519;
+        const pub = models.PublicKey.decode(gopubkey.pbBuffer()).ed25519;
+        const msg = Buffer.from(gotx.pbHex, 'hex');
 
-        // Make them Uint8Array....
-        const priv = Buffer.from(goprivkey, 'hex');
-        const pub = Buffer.from(gopubkey, 'hex');
-        const msg = Buffer.from(gotx, 'hex');
+        // make sure we calculate addresses the same as the signature
+        const addr = getAddress(pub);
+        const sigAddr = txSig.Address.toString('hex');
+        expect(addr).toEqual(sigAddr);
+
         const data = signBytes(msg, gochain, goseq);
 
-        const sig = Uint8Array.from(Buffer.from(gosig, 'hex'));
+        const sig = Uint8Array.from(txSig.Signature.ed25519);
         expect(verify(data, sig, pub)).toEqual(true);
 
         let mySig = sign(data, priv);

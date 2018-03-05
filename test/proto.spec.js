@@ -14,8 +14,7 @@ const checkSerialize = async (fixtureName, className, transform) => {
         obj = transform(obj);
     } 
 
-    const pbInput = new Buffer(fixtures.pbHex, 'hex');
-    let parsed = pbToObj(msgClass, pbInput);
+    let parsed = pbToObj(msgClass, fixtures.pbBuffer());
     expect(parsed).toEqual(obj);
 
     let encoded = objToPB(msgClass, obj);

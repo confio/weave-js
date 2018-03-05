@@ -9,7 +9,7 @@ let fixDir = path.resolve(__dirname, "..", "fixtures");
 export async function loadFixtures(filename) {
     let json = await loadJSON(filename);
     let pbHex = await loadPB(filename);
-    return {json, pbHex};
+    return {json, pbHex, pbBuffer: () => new Buffer(pbHex, 'hex')};
 }
 
 async function loadJSON(filename) {
