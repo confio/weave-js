@@ -1,61 +1,60 @@
 import fs from "fs";
 import path from "path";
-import {loadModels, pbToObj, objToPB} from '../src/proto';
+import {loadModels, loadOneModel, pbToObj, objToPB} from '../src/proto';
 
 let protoPath = path.resolve(__dirname, "fixtures", "mycoind.proto");
 
 describe('Protobuf wallet', () => {
-    let jsonWallet = loadJSON("wallet");
-    let hexWallet = loadPB("wallet");
+    // let jsonMsg = loadJSON("send_msg");
+    // let hexMsg = loadPB("send_msg");
 
-    let jsonMsg = loadJSON("send_msg");
-    let hexMsg = loadPB("send_msg");
+    const checkSerialize = async (fixtureName, className) => {
+        let fixtures = await loadFixtures(fixtureName);
+        const msgClass = await loadOneModel(protoPath, "mycoin", className);
+        const obj = JSON.parse(fixtures.json);
 
-    it('Serialize json wallet to protobuf', async () => {
-        const mycoin = await loadModels(protoPath, "mycoin", ["Set"]);
-        const obj = JSON.parse(jsonWallet);
+        let encoded = objToPB(msgClass, obj);
+        expect(encoded.toString('hex')).toEqual(fixtures.pbHex);
 
-        let buffer = objToPB(mycoin.Set, obj);
-        const hex = buffer.toString('hex')
-        expect(hex).toEqual(hexWallet);
-    });
-    it('Parse protobuf wallet to json', async () => {
-        const mycoin = await loadModels(protoPath, "mycoin", ["Set"]);
-        const buffer = new Buffer(hexWallet, 'hex');
+        const pbInput = new Buffer(fixtures.pbHex, 'hex');
+        let parsed = pbToObj(msgClass, pbInput);
+        expect(parsed).toEqual(obj);      
+    }
 
-        let parsed = pbToObj(mycoin.Set, buffer);
-        const obj = JSON.parse(jsonWallet);
-        expect(parsed).toEqual(obj);
+    it('Wallet: protobuf -> json and back', async () => {
+        await checkSerialize("wallet", "Set");
     });
 
-    it('Serialize json sendMsg to protobuf', async () => {
-        const mycoin = await loadModels(protoPath, "mycoin", ["SendMsg"]);
-        const obj = JSON.parse(jsonMsg);
-
-        let buffer = objToPB(mycoin.SendMsg, obj);
-        const hex = buffer.toString('hex')
-        expect(hex).toEqual(hexMsg);
+    it('SendMsg: protobuf -> json and back', async () => {
+        await checkSerialize("send_msg", "SendMsg");
     });
-    it('Parse protobuf sendMsg to json', async () => {
-        const mycoin = await loadModels(protoPath, "mycoin", ["SendMsg"]);
-        const buffer = new Buffer(hexMsg, 'hex');
-
-        let parsed = pbToObj(mycoin.SendMsg, buffer);
-        let obj = JSON.parse(jsonMsg);
-        expect(parsed).toEqual(obj);
-    });
-
 });
 
-function loadJSON(filename) {
+async function loadFixtures(filename) {
+    let json = await loadJSON(filename);
+    let pbHex = await loadPB(filename);
+    return {json, pbHex};
+}
+
+async function loadJSON(filename) {
     let filepath = path.resolve(__dirname, "fixtures", filename) + ".json";
-    let data = fs.readFileSync(filepath, 'utf8')
-                 .replace(/currency_code/g, "currencyCode");
+    let data = await readFile(filepath);
+    // TODO: all _ in keys to camel case
+    return data.replace(/currency_code/g, "currencyCode");
+}
+
+async function loadPB(filename) {
+    let filepath = path.resolve(__dirname, "fixtures", filename) + ".bin";
+    let data = await readFile(filepath, 'hex');
     return data;
 }
 
-function loadPB(filename) {
-    let filepath = path.resolve(__dirname, "fixtures", filename) + ".bin";
-    let data = fs.readFileSync(filepath, 'hex');
-    return data;
-}
+// readFile transforms callback into promise to async-ify it
+// https://stackoverflow.com/questions/40593875/using-filesystem-in-node-js-with-async-await
+const readFile = (path, opts = 'utf8') =>
+    new Promise((res, rej) => {
+        fs.readFile(path, opts, (err, data) => {
+            if (err) rej(err)
+            else res(data)
+        })
+    })

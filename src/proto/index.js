@@ -15,6 +15,12 @@ export async function loadModels(filepath, packageName, messages) {
     return res 
 }
 
+export async function loadOneModel(filepath, packageName, msg) {
+    // use loadModels to make sure it is better covered in test cases...
+    let models = await loadModels(filepath, packageName, [msg]);
+    return models[msg];
+}
+
 export function pbToObj(msgClass, buffer) {
     let decodedMessage = msgClass.decode(buffer);
     return msgClass.toObject(decodedMessage, {bytes: String});
