@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
-import { parseWallet, serializeWallet, parseSendMsg, serializeSendMsg } from '../src/proto';
+import {loadModels, pbToObj, objToPB} from '../src/proto';
+
+let protoPath = path.resolve(__dirname, "fixtures", "mycoind.proto");
 
 describe('Protobuf wallet', () => {
     let jsonWallet = loadJSON("wallet");
@@ -10,27 +12,35 @@ describe('Protobuf wallet', () => {
     let hexMsg = loadPB("send_msg");
 
     it('Serialize json wallet to protobuf', async () => {
-        let obj = JSON.parse(jsonWallet);
-        let buffer = await serializeWallet(obj);
-        let hex = buffer.toString('hex')
+        const mycoin = await loadModels(protoPath, "mycoin", ["Set"]);
+        const obj = JSON.parse(jsonWallet);
+
+        let buffer = objToPB(mycoin.Set, obj);
+        const hex = buffer.toString('hex')
         expect(hex).toEqual(hexWallet);
     });
     it('Parse protobuf wallet to json', async () => {
-        let buffer = new Buffer(hexWallet, 'hex');
-        let parsed = await parseWallet(buffer);
-        let obj = JSON.parse(jsonWallet);
+        const mycoin = await loadModels(protoPath, "mycoin", ["Set"]);
+        const buffer = new Buffer(hexWallet, 'hex');
+
+        let parsed = pbToObj(mycoin.Set, buffer);
+        const obj = JSON.parse(jsonWallet);
         expect(parsed).toEqual(obj);
     });
 
     it('Serialize json sendMsg to protobuf', async () => {
-        let obj = JSON.parse(jsonMsg);
-        let buffer = await serializeSendMsg(obj);
-        let hex = buffer.toString('hex')
+        const mycoin = await loadModels(protoPath, "mycoin", ["SendMsg"]);
+        const obj = JSON.parse(jsonMsg);
+
+        let buffer = objToPB(mycoin.SendMsg, obj);
+        const hex = buffer.toString('hex')
         expect(hex).toEqual(hexMsg);
     });
     it('Parse protobuf sendMsg to json', async () => {
-        let buffer = new Buffer(hexMsg, 'hex');
-        let parsed = await parseSendMsg(buffer);
+        const mycoin = await loadModels(protoPath, "mycoin", ["SendMsg"]);
+        const buffer = new Buffer(hexMsg, 'hex');
+
+        let parsed = pbToObj(mycoin.SendMsg, buffer);
         let obj = JSON.parse(jsonMsg);
         expect(parsed).toEqual(obj);
     });

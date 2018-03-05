@@ -1,53 +1,29 @@
 import protobuf from "protobufjs";
 import path from "path";
 
-let _wallet = null;
-let _sendMsg = null;
-
-let protoPath = path.resolve(__dirname, "mycoind.proto");
-
-async function walletClass() {
-    if (_wallet == null) {
-        let root = await protobuf.load(protoPath)
-        _wallet = root.lookupType("mycoin.Set")
+// loadModels imports a file with the given packageName
+// and accepts a list of strings (messages)
+//
+// returns an object with a protobufjs.Message class for each message listed
+export async function loadModels(filepath, packageName, messages) {
+    let res = {};
+    let root = await protobuf.load(filepath)
+    for (let msg of messages) {
+        let name = packageName + "." + msg;
+        res[msg] = root.lookupType(name);
     }
-    return _wallet;
+    return res 
 }
 
-async function sendMsgClass() {
-    if (_sendMsg == null) {
-        let root = await protobuf.load(protoPath)
-        _sendMsg = root.lookupType("mycoin.SendMsg")
-    }
-    return _sendMsg;
+export function pbToObj(msgClass, buffer) {
+    let decodedMessage = msgClass.decode(buffer);
+    return msgClass.toObject(decodedMessage, {bytes: String});
 }
 
-export async function parseWallet(buffer) {
-    let Wallet = await walletClass();
-    let decodedMessage = Wallet.decode(buffer);
-    return Wallet.toObject(decodedMessage);
-}
-
-export async function serializeWallet(obj) {
-    let Wallet = await walletClass();
-    let err = Wallet.verify(obj);
+export function objToPB(msgClass, obj) {
+    let err = msgClass.verify(obj);
     if (err) throw Error(err);
 
-    let buffer = Wallet.encode(obj).finish();
-    return buffer;
-}
-
-export async function parseSendMsg(buffer) {
-    let SendMsg = await sendMsgClass();
-    let decodedMessage = SendMsg.decode(buffer);
-    return SendMsg.toObject(decodedMessage, {bytes: String});
-}
-
-export async function serializeSendMsg(obj) {
-    let SendMsg = await sendMsgClass();
-    let err = SendMsg.verify(obj);
-    if (err) throw Error(err);
-
-    let buffer = SendMsg.encode(obj).finish();
+    let buffer = msgClass.encode(obj).finish();
     return buffer;
 }
