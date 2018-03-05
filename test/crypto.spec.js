@@ -1,4 +1,4 @@
-import { generateSeedKeys, publicKey, signBytes, sign, verify, getAddress } from '../src/crypto';
+import { initNacl, generateSeedKeys, signBytes, sign, verify, getAddress } from '../src/crypto';
 
 // unsigned_tx.bin
 let gotx = "0a440a14eddea5bddec757e27b7e70fb9468cb678589e2431214539ac8bc8eeb506cd42e66e8b5508f222b08f45a1a0808fa011a03455448220c54657374207061796d656e74";
@@ -18,11 +18,10 @@ let goseq = 17;
 let gochain = "test-123";
 
 describe('Crypto primitives', () => {
-    it('Sign and verify', () => {
-        const keys = generateSeedKeys();
-        const pub = publicKey(keys.secret);
-        expect(pub).toEqual(keys.pubkey);
+    it('Sign and verify', async () => {
+        await initNacl();
 
+        const keys = generateSeedKeys();
         const msg = Buffer.from(gotx, 'hex');
         const data = signBytes(msg, gochain, goseq);
         let sig = sign(data, keys.secret);
@@ -30,7 +29,9 @@ describe('Crypto primitives', () => {
         expect(verify(data, sig, keys.pubkey)).toEqual(true);
     });
 
-    it('Check golang compatibility', () => {
+    it('Check golang compatibility', async () => {
+        await initNacl();
+
         // make sure we calculate addresses the same
         const addr = getAddress(gopubkey);
         expect(addr).toEqual(goaddr);
@@ -38,9 +39,6 @@ describe('Crypto primitives', () => {
         // Make them Uint8Array....
         const priv = Buffer.from(goprivkey, 'hex');
         const pub = Buffer.from(gopubkey, 'hex');
-        const calc = publicKey(priv);
-        expect(Buffer.from(calc)).toEqual(pub);
-
         const msg = Buffer.from(gotx, 'hex');
         const data = signBytes(msg, gochain, goseq);
 
