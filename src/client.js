@@ -1,12 +1,17 @@
 import { RpcClient } from 'tendermint';
 
-let DefaultURI = "http://localhost:46657";
-// let DefaultURI = "ws://localhost:46657";
+// let DefaultURI = "http://localhost:46657";
+let DefaultURI = "ws://localhost:46657";
 
 export class Client {
     constructor(uri) {
         uri = uri || DefaultURI;
         this.client = RpcClient(uri);
+        this.closed = false;
+        // need to handle error somehow, only care if it is not us closing it...
+        this.client.on('error', err => {
+            if (!this.closed) console.log("connection:", err);
+        });
     }
 
     status() {
@@ -14,6 +19,7 @@ export class Client {
     }
 
     close() {
+        this.closed = true;
         return this.client.close();
     }
 

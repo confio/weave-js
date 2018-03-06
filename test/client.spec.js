@@ -3,7 +3,7 @@ import {execFile, spawn} from 'child_process';
 import path from "path";
 import util from 'util';
 
-import {KeyBase, Client} from '../src';
+import {KeyBase, Client, pbToObj, loadModels} from '../src';
 
 const run = util.promisify(execFile);
 
@@ -15,6 +15,7 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 describe('Test client against mycoind', () => {
     let user, tm, abci; // to be set in beforeAll
+    let client;
 
     // set up server
     beforeAll(async () => {
@@ -40,27 +41,61 @@ describe('Test client against mycoind', () => {
 
         // Give them time to make a few blocks....
         await sleep(3500);
+        client = new Client();
     })
 
     // shutdown server
     afterAll(async () => {
+        client.close();
+        await sleep(100);
         tm.kill();
         abci.kill();
     })
     
     it('Check status works', async () => {
-        let client = new Client();
         // TODO: handle errors better
+        let status = {};
         try {
-            let status = await client.status({})
-            let height = status.result.latest_block_height
-            expect(height).toBeGreaterThan(1);    
+            status = await client.status()
         } catch (err) {
             // report what we got and fail
+            console.log(err);
             expect(err).toBeNull();
         }
-        client.close();
-    });
+        let height = status.latest_block_height
+        expect(height).toBeGreaterThan(1);    
+});
+
+    it('Check query state', async () => {
+        let models = await loadModels(protoPath, "mycoin", ["Set"]);
+
+        let empty, match;
+        const prefix = new Buffer("cash:").toString('hex');
+        try {
+            empty = await client.query(user.address());
+            match = await client.query(prefix + user.address());
+        } catch (err) {
+            // report what we got and fail
+            console.log(err);
+            expect(err).toBeNull();
+        }
+
+        expect(empty.response).toBeDefined();
+        // why is json height a string???
+        expect(parseInt(empty.response.height, 10)).toBeGreaterThan(1);
+        expect(empty.response.value).toBeUndefined();
+
+        expect(match.response).toBeDefined();
+        expect(parseInt(match.response.height, 10)).toBeGreaterThan(1);
+        expect(match.response.value).toBeDefined();
+
+        let value = new Buffer(match.response.value, 'base64');
+        let parsed = pbToObj(models.Set, value);
+        expect(parsed.coins.length).toEqual(1);
+        let coin = parsed.coins[0];
+        expect(coin.integer).toEqual(123456789);
+        expect(coin.currencyCode).toEqual('MYC');        
+    })
 })
 
 // if we want to debug failing tests... uncomment these to dump it all out
