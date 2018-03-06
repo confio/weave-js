@@ -1,9 +1,9 @@
 import path from "path";
 import {loadFixtures} from './helpers/fixtures';
+import memdown from 'memdown';
 
 import {KeyBase} from '../src/keybase';
-// import { loadModels, pbToObj, objToPB} from '../src/proto';
-// import { initNacl, generateKeyPair, signBytes, sign, verify, getAddress } from '../src/crypto';
+import {open} from '../src/db';
 
 let protoPath = path.resolve(__dirname, "fixtures", "mycoind.proto");
 
@@ -19,7 +19,7 @@ describe('Keybase crypto helpers', () => {
         let one = keybase.add('john');
         expect(keybase.length).toBe(1);
         expect(one).not.toBeNull(); 
-        expect(keybase.get('john')).not.toBeNull();
+        expect(keybase.get('john')).not.toBeUndefined();
         expect(one.address().length).toBe(40);
 
         // to check sig (used to generate fixtures)
@@ -33,11 +33,43 @@ describe('Keybase crypto helpers', () => {
         // add one more
         let two = keybase.add('merry');
         expect(keybase.length).toBe(2);
-        expect(two).not.toBeNull();
+        expect(two).not.toBeUndefined();
         expect(two.verify(msg, sig, chain, seq)).toBe(false);
         
         expect(() => keybase.add('john')).toThrowError();
     });
+
+    it('Check KeyPair ser/deser', async () => {        
+        let keybase = await KeyBase.setup(protoPath, "mycoin");
+        let orig = keybase.add('orig');
+
+        let ser = orig.stringify();
+        let {pub, sec} = keybase.parse(ser);
+        expect(pub).toEqual(orig.pubkey);
+        expect(sec).toEqual(orig.secret);        
+    });
+
+    it('Check persistence', async() => {
+        // use leveldown('path') in cli, leveljs() in browser
+        let store = memdown();
+        let up = await open(store);
+        let keybase = await KeyBase.setup(protoPath, "mycoin", up);
+
+        expect(keybase.length).toBe(0);
+        let addr = keybase.add('demo').address();
+        expect(keybase.length).toBe(1);
+        await keybase.save(); // TODO: promisify
+
+        // await up.close();
+        // let up = await db.open(store);
+        
+        // open a second copy for keybase
+        let k2 = await KeyBase.setup(protoPath, "mycoin", up);
+        expect(k2.length).toBe(1);
+        let demo = k2.get('demo');
+        expect(demo).not.toBeUndefined();
+        expect(demo.address()).toBe(addr);
+    })
 
     // it('Check golang compatibility', async () => {
     //     await initNacl();

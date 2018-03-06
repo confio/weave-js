@@ -24,6 +24,8 @@
   "dependencies": {
     "deep-equal": "^1.0.1",
     "js-nacl": "^1.2.2",
+    "leveldown": "^3.0.0",
+    "levelup": "^2.0.2",
     "protobufjs": "^6.8.6",
     "sha.js": "^2.4.10",
     "stacktrace-js": "^2.0.0",
@@ -41,6 +43,7 @@
     "css-loader": "^0.26.1",
     "eslint": "^4.18.2",
     "jest": "^20.0.4",
+    "memdown": "^2.0.0",
     "node-sass": "^4.5.0",
     "null-loader": "^0.1.1",
     "rimraf": "^2.6.1",

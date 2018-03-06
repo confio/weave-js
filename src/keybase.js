@@ -35,6 +35,16 @@ class KeyPair {
         let bz = signBytes(msg, chainID, seq);
         return verify(bz, sig[this.algo], this.pubBytes());
     }
+
+    stringify() {
+        let value = {pub: this.pubkey, sec: this.secret};
+        return JSON.stringify(value);    
+    }
+
+    // static parse(json) {
+
+    // }
+
 }
 
 export class KeyBase {
@@ -47,6 +57,8 @@ export class KeyBase {
     }
 
     // setup will init all modules
+    // protoPath is the name of the .proto file and packageName used inside of it
+    // db must be levelup compliant
     static setup(protoPath, packageName, db) {
         return initNacl().then(() =>
             loadModels(protoPath, packageName, ['PrivateKey', 'PublicKey', 'Signature'])
@@ -56,9 +68,9 @@ export class KeyBase {
 
     makePair(algo, pubkey, secret) {
         let pub = this.PublicKey.create();
-        pub[algo] = pubkey;
+        pub[algo] = Buffer.from(pubkey);
         let priv = this.PrivateKey.create();
-        priv[algo] = secret
+        priv[algo] = Buffer.from(secret);
         return new KeyPair(algo, pub, priv, this.Signature);
     }
 
@@ -74,6 +86,7 @@ export class KeyBase {
     }
 
     // TODO: support multiple algorithms, not just ed25519
+    // call with properly formatted protobuf Messages as pubkey and secret
     set(name, pubkey, secret) {
         if (this.keys[name]) {
             throw Error("Cannot overwrite key " + name);
@@ -95,6 +108,8 @@ export class KeyBase {
     }
 
     // db should be local storage??? node-localstorage
+    // returns a promise that is resolved when all data writen
+    // TODO: this only adds keys, doesn't remove
     save(db) {
         if (db) {
             this.db = db;
@@ -102,17 +117,40 @@ export class KeyBase {
         if (!this.db) {
             throw Error("must set db in save or previous load");
         }
-        // TODO: save async promise style
-        return this;
+        let batch = this.db.batch();
+        for (let name of Object.keys(this.keys)) {
+            let pair = this.get(name);
+            batch.put(name, pair.stringify());
+        }
+        return batch.write();
     }
 
+    // db must be a levelup db or falsy
+    // returns a promise that resolves to the filled keybase
     load(db) {
         // short-circuit, nothing to do
         if (!db) {
-            return this;
+            return new Promise((res, rej) => res(this));
         }
         this.db = db;
-        // TODO: load
-        return this;
+        return new Promise((res, rej) => {
+            this.db.createReadStream()
+                .on('data', data => {
+                    let name = data.key.toString()
+                    let {pub, sec} = this.parse(data.value);
+                    this.set(name, pub, sec);
+                })
+                .on('error', err => rej(err))
+                .on('close', () => res(this))
+                .on('end', () => res(this))
+        });
+    }
+
+    // parse takes a json serialized KeyPair and reconstructs is
+    parse(pair) {
+        let {pub, sec} = JSON.parse(pair);
+        pub = this.PublicKey.fromObject(pub);
+        sec = this.PrivateKey.fromObject(sec);
+        return {pub, sec};
     }
 }
