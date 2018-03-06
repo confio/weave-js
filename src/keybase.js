@@ -11,10 +11,21 @@ class KeyPair {
         this.Signature = Signature;
     }
 
+    pubBytes() {
+        return this.pubkey[this.algo];
+    }
+
+    secBytes() {
+        return this.secret[this.algo];
+    }
+
+    address() {
+        return getAddress(this.pubBytes());
+    }
+
     sign(msg, chainID, seq) {
         let bz = signBytes(msg, chainID, seq);
-        let sig = sign(bz, this.secret[this.algo]);
-        // TODO: wrap this in a protobuf message!
+        let sig = sign(bz, this.secBytes());
         let wrap = this.Signature.create();
         wrap[this.algo] = sig;
         return wrap;
@@ -22,7 +33,7 @@ class KeyPair {
 
     verify(msg, sig, chainID, seq) {
         let bz = signBytes(msg, chainID, seq);
-        return verify(bz, sig[this.algo], this.pubkey[this.algo]);
+        return verify(bz, sig[this.algo], this.pubBytes());
     }
 }
 

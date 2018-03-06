@@ -20,6 +20,7 @@ describe('Keybase crypto helpers', () => {
         expect(keybase.length).toBe(1);
         expect(one).not.toBeNull(); 
         expect(keybase.get('john')).not.toBeNull();
+        expect(one.address().length).toBe(40);
 
         // to check sig (used to generate fixtures)
         const seq = 34;
