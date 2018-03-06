@@ -21,7 +21,6 @@ const checkSerialize = async (fixtureName, className, transform) => {
     expect(encoded.toString('hex')).toEqual(fixtures.pbHex);
 }
 
-
 describe('Protobuf wallet', () => {
     it('Wallet: protobuf -> json and back', async () => {
         await checkSerialize("wallet", "Set");

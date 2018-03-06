@@ -2,6 +2,7 @@ import fs from 'fs';
 import {execFile, spawn} from 'child_process';
 import path from "path";
 import util from 'util';
+import {WritableStreamBuffer} from 'stream-buffers';
 
 import {KeyBase, Client, pbToObj, loadModels} from '../src';
 
@@ -15,6 +16,7 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 describe('Test client against mycoind', () => {
     let tm, abci; // to be set in beforeAll
+    let abciLog, tmLog;
     let chainID;
     let user, user2;
     let client;
@@ -39,9 +41,9 @@ describe('Test client against mycoind', () => {
         fs.writeFileSync(genesisPath, JSON.stringify(data, null, 4));
 
         tm = spawn('tendermint', ['--home', homeDir,  'node', '--p2p.skip_upnp']);
-        // viewProc("tendermint", tm);
+        tmLog = viewProc("tendermint", tm);
         abci = spawn('mycoind', ['--home', homeDir,  'start']);
-        // viewProc("mycoind", abci);
+        abciLog = viewProc("mycoind", abci);
 
         // Give them time to make a few blocks....
         await sleep(3500);
@@ -54,6 +56,7 @@ describe('Test client against mycoind', () => {
         await sleep(100);
         tm.kill();
         abci.kill();
+        // console.log(abciLog.getContentsAsString('utf8'));
     })
     
     it('Check status works', async () => {
@@ -110,14 +113,12 @@ describe('Test client against mycoind', () => {
         // post it to server
         let tx = buildTx(models, user, user2, amount, 'MYC', chainID, 0);
         try {
-            txresp = await client.client.broadcastTxCommit(tx)
-            abci.stdout.
+            txresp = await client.broadcastTxCommit(tx)
         } catch (err) {
             // report what we got and fail
             console.log(err);
             expect(err).toBeNull();
         }
-        console.log(txresp);
 
         // wait for one block
         await sleep(1500);
@@ -129,7 +130,6 @@ describe('Test client against mycoind', () => {
             rcpt = await client.query(prefix + user2.address());
         } catch (err) {
             // report what we got and fail
-            console.log(err);
             expect(err).toBeNull();
         }
         expect(sender.response).toBeDefined();
@@ -140,14 +140,14 @@ describe('Test client against mycoind', () => {
         let sValue = new Buffer(sender.response.value, 'base64');
         let sParsed = pbToObj(models.Set, sValue);
         expect(sParsed.coins.length).toEqual(1);
-        let sCoin = parsed.coins[0];
-        expect(coin.integer).toEqual(123456789-amount);
+        let sCoin = sParsed.coins[0];
+        expect(sCoin.integer).toEqual(123456789-amount);
 
-        let rValue = new Buffer(recipient.response.value, 'base64');
+        let rValue = new Buffer(rcpt.response.value, 'base64');
         let rParsed = pbToObj(models.Set, rValue);
         expect(sParsed.coins.length).toEqual(1);
-        let rCoin = parsed.coins[0];
-        expect(coin.integer).toEqual(amount);
+        let rCoin = rParsed.coins[0];
+        expect(rCoin.integer).toEqual(amount);
     })
 })
 
@@ -171,16 +171,18 @@ function buildTx(models, sender, rcpt, amount, currency, chainID, seq) {
             signature: sig
         });
         tx.signatures = [std];
-        console.log(models.Tx.toObject(tx));
+
         let txbz = models.Tx.encode(tx).finish();
         return txbz;
 }
 
 // if we want to debug failing tests... uncomment these to dump it all out
 function viewProc(name, child) {
-    child.on('error', err => console.log(name, "error:", err))
+    child.on('error', err => console.log(name, "error:", err));
+    let sink = new WritableStreamBuffer();
     if (child.stdout)
-        child.stdout.pipe(process.stderr);    
+        child.stdout.pipe(sink);    
     if (child.stderr)
-        child.stderr.pipe(process.stderr);    
+        child.stderr.pipe(sink);
+    return sink;    
 }

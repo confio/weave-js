@@ -48,6 +48,7 @@
     "null-loader": "^0.1.1",
     "rimraf": "^2.6.1",
     "sass-loader": "^5.0.1",
+    "stream-buffers": "^3.0.1",
     "style-loader": "^0.13.1",
     "webpack": "2.6.1",
     "webpack-dev-server": "2.5.0",

@@ -33,5 +33,12 @@ export class Client {
         let q = {path: '/key', data: key};
         return this.client.abciQuery(q);
     }
+
+    broadcastTxCommit(tx) {
+        if (typeof tx !== 'string') {
+            tx = tx.toString('base64');
+        }
+        return this.client.broadcastTxCommit({tx})
+    }
 }
 
