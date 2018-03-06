@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import shajs from 'sha.js';
 
 import nacl_factory from 'js-nacl';
 
@@ -15,7 +15,7 @@ export function initNacl(opts) {
 // getAddress accepts pubkey as a hex-formatted string or a Buffer
 // returns the address as a hex string
 export function getAddress (pubkey) {
-    const hash = crypto.createHash('sha256');
+    const hash = shajs('sha256');
     hash.update(pubkey, 'hex');
     let hex = hash.digest('hex');
     return hex.slice(0, 40);  // 20 bytes
