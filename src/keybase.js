@@ -23,6 +23,10 @@ class KeyPair {
         return getAddress(this.pubBytes());
     }
 
+    addressBytes() {
+        return new Buffer(this.address(), 'hex');
+    }
+
     sign(msg, chainID, seq) {
         let bz = signBytes(msg, chainID, seq);
         let sig = sign(bz, this.secBytes());

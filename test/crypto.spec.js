@@ -41,12 +41,12 @@ describe('Crypto primitives', () => {
 
         // make sure we calculate addresses the same as the signature
         const addr = getAddress(pub);
-        const sigAddr = txSig.Address.toString('hex');
+        const sigAddr = txSig.address.toString('hex');
         expect(addr).toEqual(sigAddr);
 
         const data = signBytes(msg, gochain, goseq);
 
-        const sig = Uint8Array.from(txSig.Signature.ed25519);
+        const sig = Uint8Array.from(txSig.signature.ed25519);
         expect(verify(data, sig, pub)).toEqual(true);
 
         let mySig = sign(data, priv);

@@ -14,7 +14,9 @@ const genesisPath = path.resolve(homeDir, "config", "genesis.json");
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 describe('Test client against mycoind', () => {
-    let user, tm, abci; // to be set in beforeAll
+    let tm, abci; // to be set in beforeAll
+    let chainID;
+    let user, user2;
     let client;
 
     // set up server
@@ -27,11 +29,13 @@ describe('Test client against mycoind', () => {
         // create a new key to use
         let keybase = await KeyBase.setup(protoPath, "mycoin");
         user = keybase.add('demo');
+        user2 = keybase.add('new_guy');
         let addr = user.address();
         
         // set new address in genesis
         let data = JSON.parse(fs.readFileSync(genesisPath));
         data.app_state.cash[0].address = addr; 
+        chainID = data.chain_id;
         fs.writeFileSync(genesisPath, JSON.stringify(data, null, 4));
 
         tm = spawn('tendermint', ['--home', homeDir,  'node', '--p2p.skip_upnp']);
@@ -64,7 +68,7 @@ describe('Test client against mycoind', () => {
         }
         let height = status.latest_block_height
         expect(height).toBeGreaterThan(1);    
-});
+    });
 
     it('Check query state', async () => {
         let models = await loadModels(protoPath, "mycoin", ["Set"]);
@@ -96,7 +100,81 @@ describe('Test client against mycoind', () => {
         expect(coin.integer).toEqual(123456789);
         expect(coin.currencyCode).toEqual('MYC');        
     })
+
+    it('Send a tx', async () => {
+        const models = await loadModels(protoPath, "mycoin", 
+            ["Set", "SendMsg", "Coin", "StdSignature", "Tx"]);
+        const amount = 50000;
+        let sender, rcpt, txresp;
+        
+        // post it to server
+        let tx = buildTx(models, user, user2, amount, 'MYC', chainID, 0);
+        try {
+            txresp = await client.client.broadcastTxCommit(tx)
+            abci.stdout.
+        } catch (err) {
+            // report what we got and fail
+            console.log(err);
+            expect(err).toBeNull();
+        }
+        console.log(txresp);
+
+        // wait for one block
+        await sleep(1500);
+
+        // query states
+        const prefix = new Buffer("cash:").toString('hex');
+        try {
+            sender = await client.query(prefix + user.address());
+            rcpt = await client.query(prefix + user2.address());
+        } catch (err) {
+            // report what we got and fail
+            console.log(err);
+            expect(err).toBeNull();
+        }
+        expect(sender.response).toBeDefined();
+        expect(sender.response.value).toBeDefined();
+        expect(rcpt.response).toBeDefined();
+        expect(rcpt.response.value).toBeDefined();            
+
+        let sValue = new Buffer(sender.response.value, 'base64');
+        let sParsed = pbToObj(models.Set, sValue);
+        expect(sParsed.coins.length).toEqual(1);
+        let sCoin = parsed.coins[0];
+        expect(coin.integer).toEqual(123456789-amount);
+
+        let rValue = new Buffer(recipient.response.value, 'base64');
+        let rParsed = pbToObj(models.Set, rValue);
+        expect(sParsed.coins.length).toEqual(1);
+        let rCoin = parsed.coins[0];
+        expect(coin.integer).toEqual(amount);
+    })
 })
+
+function buildTx(models, sender, rcpt, amount, currency, chainID, seq) {
+        // build a transaction
+        let msg = models.SendMsg.create({
+            src: sender.addressBytes(),
+            dest: rcpt.addressBytes(),
+            amount: models.Coin.create({integer: amount, currencyCode: currency}),
+            memo: 'Test Tx'
+        });
+        let tx = models.Tx.create({
+            sendMsg: msg
+        })
+        let bz = models.Tx.encode(tx).finish();
+
+        // sign it (with chain-id)
+        let sig = sender.sign(bz, chainID, seq);
+        let std = models.StdSignature.create({
+            pubKey: sender.pubkey,
+            signature: sig
+        });
+        tx.signatures = [std];
+        console.log(models.Tx.toObject(tx));
+        let txbz = models.Tx.encode(tx).finish();
+        return txbz;
+}
 
 // if we want to debug failing tests... uncomment these to dump it all out
 function viewProc(name, child) {

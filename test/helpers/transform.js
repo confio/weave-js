@@ -12,9 +12,9 @@ const flatUser = flatten(
 
 const flatSend = flatten(['Sum', 'SendMsg'], ['sendMsg'], ['Sum']);
 const flatSig = (idx) => flatten(
-    ['signatures', idx, 'Signature', 'Sig', 'Ed25519'], 
-    ['signatures', idx, 'Signature', 'ed25519'], 
-    ['signatures', idx, 'Signature', 'Sig']);
+    ['signatures', idx, 'signature', 'Sig', 'Ed25519'], 
+    ['signatures', idx, 'signature', 'ed25519'], 
+    ['signatures', idx, 'signature', 'Sig']);
 const flatTx = manyFlat(flatSend, flatSig(0), flatSig(1), flatSig(2));
 
 export let transforms = {
