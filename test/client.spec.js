@@ -113,7 +113,7 @@ describe('Test client against mycoind', () => {
         // post it to server
         let tx = buildTx(models, user, user2, amount, 'MYC', chainID, 0);
         try {
-            txresp = await client.broadcastTxCommit(tx)
+            txresp = await client.sendTx(tx)
         } catch (err) {
             // report what we got and fail
             console.log(err);
@@ -151,6 +151,7 @@ describe('Test client against mycoind', () => {
     })
 })
 
+// buildTx needs to be abstracted and added to the library
 function buildTx(models, sender, rcpt, amount, currency, chainID, seq) {
         // build a transaction
         let msg = models.SendMsg.create({
@@ -176,7 +177,7 @@ function buildTx(models, sender, rcpt, amount, currency, chainID, seq) {
         return txbz;
 }
 
-// if we want to debug failing tests... uncomment these to dump it all out
+// this returns a buffer with all text, so we can print out in afterAll for debugging
 function viewProc(name, child) {
     child.on('error', err => console.log(name, "error:", err));
     let sink = new WritableStreamBuffer();

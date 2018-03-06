@@ -34,7 +34,7 @@ export class Client {
         return this.client.abciQuery(q);
     }
 
-    broadcastTxCommit(tx) {
+    sendTx(tx) {
         if (typeof tx !== 'string') {
             tx = tx.toString('base64');
         }
