@@ -2,8 +2,7 @@ import path from "path";
 import {loadFixtures} from './helpers/fixtures';
 import memdown from 'memdown';
 
-import {KeyBase} from '../src/keybase';
-import {open} from '../src/db';
+import {KeyBase, openDB} from '../src';
 
 let protoPath = path.resolve(__dirname, "fixtures", "mycoind.proto");
 
@@ -52,7 +51,7 @@ describe('Keybase crypto helpers', () => {
     it('Check persistence', async() => {
         // use leveldown('path') in cli, leveljs() in browser
         let store = memdown();
-        let up = await open(store);
+        let up = await openDB(store);
         let keybase = await KeyBase.setup(protoPath, "mycoin", up);
 
         expect(keybase.length).toBe(0);
@@ -61,7 +60,7 @@ describe('Keybase crypto helpers', () => {
         await keybase.save(); // TODO: promisify
 
         // await up.close();
-        // let up = await db.open(store);
+        // let up = await db.openDB(store);
         
         // open a second copy for keybase
         let k2 = await KeyBase.setup(protoPath, "mycoin", up);

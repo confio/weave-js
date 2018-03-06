@@ -29,7 +29,7 @@
     "protobufjs": "^6.8.6",
     "sha.js": "^2.4.10",
     "stacktrace-js": "^2.0.0",
-    "tendermint": "^2.0.5"
+    "tendermint": "^3.0.0"
   },
   "devDependencies": {
     "babel-core": "^6.23.1",
