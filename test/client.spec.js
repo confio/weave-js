@@ -9,7 +9,7 @@ import {KeyBase, Client, pbToObj, loadModels} from '../src';
 const run = util.promisify(execFile);
 
 const protoPath = path.resolve(__dirname, "fixtures", "mycoind.proto");
-const homeDir = "/tmp/test-weave-js"; 
+const homeDir = "/tmp/test-weave-js";
 const genesisPath = path.resolve(homeDir, "config", "genesis.json");
 
 const sleep = ms => new Promise(res => setTimeout(res, ms));
@@ -33,10 +33,10 @@ describe('Test client against mycoind', () => {
         user = keybase.add('demo');
         user2 = keybase.add('new_guy');
         let addr = user.address();
-        
+
         // set new address in genesis
         let data = JSON.parse(fs.readFileSync(genesisPath));
-        data.app_state.cash[0].address = addr; 
+        data.app_state.cash[0].address = addr;
         chainID = data.chain_id;
         fs.writeFileSync(genesisPath, JSON.stringify(data, null, 4));
 
@@ -58,7 +58,7 @@ describe('Test client against mycoind', () => {
         abci.kill();
         // console.log(abciLog.getContentsAsString('utf8'));
     })
-    
+
     it('Check status works', async () => {
         // TODO: handle errors better
         let status = {};
@@ -70,7 +70,7 @@ describe('Test client against mycoind', () => {
             expect(err).toBeNull();
         }
         let height = status.latest_block_height
-        expect(height).toBeGreaterThan(1);    
+        expect(height).toBeGreaterThan(1);
     });
 
     it('Check query state', async () => {
@@ -100,16 +100,16 @@ describe('Test client against mycoind', () => {
         let parsed = pbToObj(models.Set, value);
         expect(parsed.coins.length).toEqual(1);
         let coin = parsed.coins[0];
-        expect(coin.integer).toEqual(123456789);
-        expect(coin.currencyCode).toEqual('MYC');        
+        expect(coin.whole).toEqual(123456789);
+        expect(coin.ticker).toEqual('MYC');
     })
 
     it('Send a tx', async () => {
-        const models = await loadModels(protoPath, "mycoin", 
+        const models = await loadModels(protoPath, "mycoin",
             ["Set", "SendMsg", "Coin", "StdSignature", "Tx"]);
         const amount = 50000;
         let sender, rcpt, txresp;
-        
+
         // post it to server
         let tx = buildTx(models, user, user2, amount, 'MYC', chainID, 0);
         try {
@@ -135,19 +135,19 @@ describe('Test client against mycoind', () => {
         expect(sender.response).toBeDefined();
         expect(sender.response.value).toBeDefined();
         expect(rcpt.response).toBeDefined();
-        expect(rcpt.response.value).toBeDefined();            
+        expect(rcpt.response.value).toBeDefined();
 
         let sValue = new Buffer(sender.response.value, 'base64');
         let sParsed = pbToObj(models.Set, sValue);
         expect(sParsed.coins.length).toEqual(1);
         let sCoin = sParsed.coins[0];
-        expect(sCoin.integer).toEqual(123456789-amount);
+        expect(sCoin.whole).toEqual(123456789-amount);
 
         let rValue = new Buffer(rcpt.response.value, 'base64');
         let rParsed = pbToObj(models.Set, rValue);
         expect(sParsed.coins.length).toEqual(1);
         let rCoin = rParsed.coins[0];
-        expect(rCoin.integer).toEqual(amount);
+        expect(rCoin.whole).toEqual(amount);
     })
 })
 
@@ -157,7 +157,7 @@ function buildTx(models, sender, rcpt, amount, currency, chainID, seq) {
         let msg = models.SendMsg.create({
             src: sender.addressBytes(),
             dest: rcpt.addressBytes(),
-            amount: models.Coin.create({integer: amount, currencyCode: currency}),
+            amount: models.Coin.create({whole: amount, ticker: currency}),
             memo: 'Test Tx'
         });
         let tx = models.Tx.create({
@@ -182,8 +182,8 @@ function viewProc(name, child) {
     child.on('error', err => console.log(name, "error:", err));
     let sink = new WritableStreamBuffer();
     if (child.stdout)
-        child.stdout.pipe(sink);    
+        child.stdout.pipe(sink);
     if (child.stderr)
         child.stderr.pipe(sink);
-    return sink;    
+    return sink;
 }
