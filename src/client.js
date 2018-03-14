@@ -30,7 +30,7 @@ export class Client {
         if (typeof key !== 'string') {
             key = key.toString('hex');
         }
-        let q = {path: '/key', data: key};
+        let q = {path: '/', data: key};
         return this.client.abciQuery(q);
     }
 
