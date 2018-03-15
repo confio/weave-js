@@ -21,6 +21,8 @@ let DefaultURI = "ws://localhost:46657";
 
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 
+const defaultKeyMap = (key) => ({_key: key})
+
 export class Client {
     constructor(uri) {
         uri = uri || DefaultURI;
@@ -31,6 +33,11 @@ export class Client {
             if (!this.closed) console.log("connection:", err);
         });
         // load the ResultSet protobuf
+    }
+
+    close() {
+        this.closed = true;
+        return this.client.close();
     }
 
     status() {
@@ -47,6 +54,13 @@ export class Client {
             .then(status => status.latest_block_height);
     }
 
+    sendTx(tx) {
+        if (typeof tx !== 'string') {
+            tx = tx.toString('base64');
+        }
+        return this.client.broadcastTxCommit({tx})
+    }
+
     // waitForBlock will return when block h is reached
     async waitForBlock(goal) {
         let h = await this.height();
@@ -55,11 +69,6 @@ export class Client {
             h = await this.height();
         }
         return h;
-    }
-
-    close() {
-        this.closed = true;
-        return this.client.close();
     }
 
     // queryRaw returns the direct response as a promise
@@ -99,13 +108,30 @@ export class Client {
         return {h, results};
     }
 
-    // TODO: queryParse
+    // queryParse takes a protobuf `model` to decode the raw bytes,
+    // and an optional keyMap function that creates an object with one element
+    // from the key. If no keyMap given, then key is returned unmodified under _key
+    async queryParse(data, path, model, keyMap) {
+        keyMap = keyMap || defaultKeyMap;
+        const parse = (val) => model.toObject(model.decode(val), {longs: Number})
 
-    sendTx(tx) {
-        if (typeof tx !== 'string') {
-            tx = tx.toString('base64');
+        let {h, results} = await this.query(data, path);
+        let parsed = results.map((res) => {
+            let k = keyMap(res.key);
+            let v = parse(res.value);
+            return Object.assign(k, v)
+        });
+        return {h, parsed};
+    }
+
+    // queryParseOne calls query parse and returns the first element of
+    // the parsed set, or null if no set.
+    async queryParseOne(data, path, model, keyMap) {
+        let {h, parsed} = await this.queryParse(data, path, model, keyMap);
+        if (parsed.length == 0) {
+            return {h, parsed: null};
         }
-        return this.client.broadcastTxCommit({tx})
+        return {h, parsed: parsed[0]};
     }
 }
 

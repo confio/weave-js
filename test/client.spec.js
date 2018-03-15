@@ -105,20 +105,21 @@ describe('Test client against mycoind', () => {
         const prefix = new Buffer("cash:").toString('hex');
         expect(match[0].key.toString('hex')).toEqual(prefix+addr);
 
+        // const parse = (val) => models.Set.toObject(models.Set.decode(val), {longs: Number})
+        // let obj = parse(match[0].value);
+        // console.log(obj);
 
-        // let key = new Buffer(match.response.key, 'base64');
-        // console.log(key.toString('hex'));
-        // // we should have a two byte prefix for the result set packing
-        // expect(key.toString('hex').length).toEqual(userKey.length + 4);
 
-        // let value = new Buffer(match.response.value, 'base64');
-        // console.log(value.toString('hex'));
+        const getAddr = (key) => ({address: key.slice(5).toString('hex')});
+        expect(getAddr(match[0].key).address).toEqual(addr);
 
-        // let parsed = pbToObj(models.Set, value);
-        // expect(parsed.coins.length).toEqual(1);
-        // let coin = parsed.coins[0];
-        // expect(coin.whole).toEqual(123456789);
-        // expect(coin.ticker).toEqual('MYC');
+        let {parsed} = await client.queryParseOne(addr, "/wallets", models.Set, getAddr);
+        expect(parsed).not.toBeNull();
+        expect(parsed.address).toEqual(addr);
+        expect(parsed.coins.length).toEqual(1);
+        let coin = parsed.coins[0];
+        expect(coin.whole).toEqual(123456789);
+        expect(coin.ticker).toEqual('MYC');
     })
 
     it('Send a tx', async () => {
@@ -138,25 +139,22 @@ describe('Test client against mycoind', () => {
         }
 
         // wait for one block
-        await sleep(1500);
+        await client.waitForBlock(txresp.height+1)
 
-        // query states
-        let {results: sender} = await client.query(user.address(), "/wallets");
-        let {results: rcpt} = await client.query(user2.address(), "/wallets");
-        expect(sender.length).toBe(1);
-        expect(rcpt.length).toBe(1);
+        // query states        
+        const getAddr = (key) => ({address: key.slice(5).toString('hex')});
+        let {parsed: sender} = await client.queryParseOne(user.address(), "/wallets", models.Set, getAddr);
+        let {parsed: rcpt} = await client.queryParseOne(user2.address(), "/wallets", models.Set, getAddr);
+        expect(sender).toBeTruthy();
+        expect(rcpt).toBeTruthy();
         
-        let sValue = new Buffer(sender[0].value, 'base64');
-        let sParsed = pbToObj(models.Set, sValue);
-        expect(sParsed.coins.length).toEqual(1);
-        let sCoin = sParsed.coins[0];
-        expect(sCoin.whole).toEqual(123456789-amount);
+        expect(sender.address).toEqual(user.address());
+        expect(sender.coins.length).toEqual(1);
+        expect(sender.coins[0].whole).toEqual(123456789-amount);
 
-        let rValue = new Buffer(rcpt[0].value, 'base64');
-        let rParsed = pbToObj(models.Set, rValue);
-        expect(sParsed.coins.length).toEqual(1);
-        let rCoin = rParsed.coins[0];
-        expect(rCoin.whole).toEqual(amount);
+        expect(rcpt.address).toEqual(user2.address());
+        expect(rcpt.coins.length).toEqual(1);
+        expect(rcpt.coins[0].whole).toEqual(amount);
     })
 })
 
