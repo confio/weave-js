@@ -1,4 +1,20 @@
 import { RpcClient } from 'tendermint';
+import protobuf from "protobufjs";
+
+import results from './results.json';
+let ResultSet = protobuf.Root.fromJSON(results).lookupType('app.ResultSet');
+
+function parseResultSet(data) {
+    if (typeof data === 'string') {
+        data = new Buffer(data, 'base64');
+    }
+    return ResultSet.decode(data).results;
+}
+
+// TODO: automate this tool in build process
+// node ./node_modules/protobufjs/cli/bin/pbjs
+// eg.
+// node ./node_modules/protobufjs/cli/bin/pbjs -t json src/results.proto > src/results.json
 
 // let DefaultURI = "http://localhost:46657";
 let DefaultURI = "ws://localhost:46657";
@@ -14,6 +30,7 @@ export class Client {
         this.client.on('error', err => {
             if (!this.closed) console.log("connection:", err);
         });
+        // load the ResultSet protobuf
     }
 
     status() {
@@ -45,16 +62,44 @@ export class Client {
         return this.client.close();
     }
 
-    // query for key and return {value, height}
-    // key should be a hex string or a buffer
-    // TODO: allow custom path, height, proofs....
-    query(key) {
-        if (typeof key !== 'string') {
-            key = key.toString('hex');
+    // queryRaw returns the direct response as a promise
+    queryRaw(data, path) {
+        path = path || "/";  // default path literal key
+        if (typeof data !== 'string') {
+            data = data.toString('hex');
         }
-        let q = {path: '/', data: key};
-        return this.client.abciQuery(q);
+        return this.client.abciQuery({path, data});
     }
+
+    // query returns an array of {key, value} models (raw bytes)
+    //  or throws an error on invalid code
+    async query(data, path) {
+        let q = await this.queryRaw(data, path);
+        q = q.response;
+        if (q.code) {
+            throw Error("Query (" + q.code + "): " + q.log)
+        }
+
+        // TODO: return
+        let h = parseInt(q.height, 10)
+
+        // no response, empty array, done
+        if (!q.key) {
+            return {h, results: []};
+        }
+
+        // now parse them both and join....
+        let keys = parseResultSet(q.key);
+        let values = parseResultSet(q.value);
+        if (keys.length !== values.length) {
+            throw Error("Got " + keys.length + " keys but " + values.length + " values");
+        }
+
+        let results = keys.map((key, i) => ({key, value: values[i]}));
+        return {h, results};
+    }
+
+    // TODO: queryParse
 
     sendTx(tx) {
         if (typeof tx !== 'string') {

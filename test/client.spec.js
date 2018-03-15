@@ -46,7 +46,7 @@ describe('Test client against mycoind', () => {
         abciLog = viewProc("mycoind", abci);
 
         // Give them time to make a few blocks....
-        await sleep(5000);
+        await sleep(3500);
         client = new Client();
     }, 10000) // 10 second timeout
 
@@ -68,15 +68,15 @@ describe('Test client against mycoind', () => {
     })
 
     it('Check waiting works', async () => {
-        // ensure we make it to block 3
-        let h = await client.waitForBlock(3);
-        expect(h).toBe(3);
+        // ensure we make it to block 4
+        let h = await client.waitForBlock(4);
+        expect(h).toBe(4);
         h = await client.height()
-        expect(h).toBe(3);
+        expect(h).toBe(4);
 
         // now see that waiting immediately ends if old
         h = await client.waitForBlock(1);
-        expect(h).toBe(3);
+        expect(h).toBe(4);
     }, 6000);
 
     it('Check chainID works', async () => {
@@ -88,39 +88,44 @@ describe('Test client against mycoind', () => {
     it('Check query state', async () => {
         let models = await loadModels(protoPath, "mycoin", ["Set"]);
 
-        let empty, match;
+        let addr = user.address();
+        // let a = client.query(addr, "/foo");
+        // console.log(a);
+        await client.query(addr, "/foo").catch(err => expect(err).toBeTruthy());
+        await client.query(addr).catch(err => expect(err).toBeUndefined());
+
+        let {h, results: empty} = await client.query(addr);
+        // verify there is a meaninful height also returned
+        expect(h).toBeGreaterThan(3);
+        expect(empty.length).toBe(0);
+
+        // straight-forward binary query
+        let {results: match} = await client.query(addr, "/wallets");
+        expect(match.length).toBe(1);
         const prefix = new Buffer("cash:").toString('hex');
-        try {
-            empty = await client.query(user.address());
-            match = await client.query(prefix + user.address());
-        } catch (err) {
-            // report what we got and fail
-            console.log(err);
-            expect(err).toBeNull();
-        }
+        expect(match[0].key.toString('hex')).toEqual(prefix+addr);
 
-        expect(empty.response).toBeDefined();
-        // why is json height a string???
-        expect(parseInt(empty.response.height, 10)).toBeGreaterThan(1);
-        expect(empty.response.value).toBeUndefined();
 
-        expect(match.response).toBeDefined();
-        expect(parseInt(match.response.height, 10)).toBeGreaterThan(1);
-        expect(match.response.value).toBeDefined();
+        // let key = new Buffer(match.response.key, 'base64');
+        // console.log(key.toString('hex'));
+        // // we should have a two byte prefix for the result set packing
+        // expect(key.toString('hex').length).toEqual(userKey.length + 4);
 
-        let value = new Buffer(match.response.value, 'base64');
-        let parsed = pbToObj(models.Set, value);
-        expect(parsed.coins.length).toEqual(1);
-        let coin = parsed.coins[0];
-        expect(coin.whole).toEqual(123456789);
-        expect(coin.ticker).toEqual('MYC');
+        // let value = new Buffer(match.response.value, 'base64');
+        // console.log(value.toString('hex'));
+
+        // let parsed = pbToObj(models.Set, value);
+        // expect(parsed.coins.length).toEqual(1);
+        // let coin = parsed.coins[0];
+        // expect(coin.whole).toEqual(123456789);
+        // expect(coin.ticker).toEqual('MYC');
     })
 
     it('Send a tx', async () => {
         const models = await loadModels(protoPath, "mycoin",
             ["Set", "SendMsg", "Coin", "StdSignature", "Tx"]);
         const amount = 50000;
-        let sender, rcpt, txresp;
+        let txresp;
 
         // post it to server
         let tx = buildTx(models, user, user2, amount, 'MYC', chainID);
@@ -136,26 +141,18 @@ describe('Test client against mycoind', () => {
         await sleep(1500);
 
         // query states
-        const prefix = new Buffer("cash:").toString('hex');
-        try {
-            sender = await client.query(prefix + user.address());
-            rcpt = await client.query(prefix + user2.address());
-        } catch (err) {
-            // report what we got and fail
-            expect(err).toBeNull();
-        }
-        expect(sender.response).toBeDefined();
-        expect(sender.response.value).toBeDefined();
-        expect(rcpt.response).toBeDefined();
-        expect(rcpt.response.value).toBeDefined();
-
-        let sValue = new Buffer(sender.response.value, 'base64');
+        let {results: sender} = await client.query(user.address(), "/wallets");
+        let {results: rcpt} = await client.query(user2.address(), "/wallets");
+        expect(sender.length).toBe(1);
+        expect(rcpt.length).toBe(1);
+        
+        let sValue = new Buffer(sender[0].value, 'base64');
         let sParsed = pbToObj(models.Set, sValue);
         expect(sParsed.coins.length).toEqual(1);
         let sCoin = sParsed.coins[0];
         expect(sCoin.whole).toEqual(123456789-amount);
 
-        let rValue = new Buffer(rcpt.response.value, 'base64');
+        let rValue = new Buffer(rcpt[0].value, 'base64');
         let rParsed = pbToObj(models.Set, rValue);
         expect(sParsed.coins.length).toEqual(1);
         let rCoin = rParsed.coins[0];

@@ -1,0 +1,17 @@
+{
+  "nested": {
+    "app": {
+      "nested": {
+        "ResultSet": {
+          "fields": {
+            "results": {
+              "rule": "repeated",
+              "type": "bytes",
+              "id": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
