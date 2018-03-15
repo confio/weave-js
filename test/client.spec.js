@@ -46,17 +46,18 @@ describe('Test client against mycoind', () => {
         abciLog = viewProc("mycoind", abci);
 
         // Give them time to make a few blocks....
-        await sleep(3500);
+        await sleep(5000);
         client = new Client();
-    })
+    }, 10000) // 10 second timeout
 
     // shutdown server
     afterAll(async () => {
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = original_timeout;
         client.close();
         await sleep(100);
         tm.kill();
         abci.kill();
-        // console.log(abciLog.getContentsAsString('utf8'));
+        console.log(abciLog.getContentsAsString('utf8'));
     })
 
     it('Check status works', async () => {
@@ -111,7 +112,7 @@ describe('Test client against mycoind', () => {
         let sender, rcpt, txresp;
 
         // post it to server
-        let tx = buildTx(models, user, user2, amount, 'MYC', chainID, 0);
+        let tx = buildTx(models, user, user2, amount, 'MYC', chainID);
         try {
             txresp = await client.sendTx(tx)
         } catch (err) {
@@ -152,7 +153,7 @@ describe('Test client against mycoind', () => {
 })
 
 // buildTx needs to be abstracted and added to the library
-function buildTx(models, sender, rcpt, amount, currency, chainID, seq) {
+function buildTx(models, sender, rcpt, amount, currency, chainID) {
         // build a transaction
         let msg = models.SendMsg.create({
             src: sender.addressBytes(),
@@ -166,7 +167,8 @@ function buildTx(models, sender, rcpt, amount, currency, chainID, seq) {
         let bz = models.Tx.encode(tx).finish();
 
         // sign it (with chain-id)
-        let sig = sender.sign(bz, chainID, seq);
+        let {sig, seq} = sender.sign(bz, chainID);
+        expect(seq).toBe(0);
         let std = models.StdSignature.create({
             pubKey: sender.pubkey,
             signature: sig

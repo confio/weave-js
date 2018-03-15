@@ -22,10 +22,13 @@ describe('Keybase crypto helpers', () => {
         expect(one.address().length).toBe(40);
 
         // to check sig (used to generate fixtures)
-        const seq = 34;
         const chain = "some-test-id";
         let msg = new Buffer("hello world, this is important");
-        let sig = one.sign(msg, chain, seq);
+        expect(one.sequence).toBe(0)
+        one.sequence = 33;
+        let {sig, seq} = one.sign(msg, chain, seq);
+        expect(seq).toBe(33);
+        expect(one.sequence).toBe(34);
         expect(one.verify(msg, sig, chain, seq)).toBe(true);
         expect(one.verify(msg, sig, chain, seq+1)).toBe(false);
 
@@ -41,11 +44,13 @@ describe('Keybase crypto helpers', () => {
     it('Check KeyPair ser/deser', async () => {        
         let keybase = await KeyBase.setup(protoPath, "mycoin");
         let orig = keybase.add('orig');
+        orig.sequence = 22;
 
         let ser = orig.stringify();
-        let {pub, sec} = keybase.parse(ser);
+        let {pub, sec, seq} = keybase.parse(ser);
         expect(pub).toEqual(orig.pubkey);
         expect(sec).toEqual(orig.secret);        
+        expect(seq).toEqual(orig.sequence);        
     });
 
     it('Check persistence', async() => {

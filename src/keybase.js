@@ -9,6 +9,7 @@ class KeyPair {
         this.pubkey = pubkey;
         this.secret = secret;
         this.Signature = Signature;
+        this.sequence = 0;
     }
 
     pubBytes() {
@@ -27,12 +28,16 @@ class KeyPair {
         return new Buffer(this.address(), 'hex');
     }
 
-    sign(msg, chainID, seq) {
+    // sign returns the signature as well as the sequence number
+    // it signed with
+    sign(msg, chainID) {
+        let seq = this.sequence
+        this.sequence++;
         let bz = signBytes(msg, chainID, seq);
         let sig = sign(bz, this.secBytes());
         let wrap = this.Signature.create();
         wrap[this.algo] = sig;
-        return wrap;
+        return {sig: wrap, seq};
     }
 
     verify(msg, sig, chainID, seq) {
@@ -41,14 +46,9 @@ class KeyPair {
     }
 
     stringify() {
-        let value = {pub: this.pubkey, sec: this.secret};
+        let value = {pub: this.pubkey, sec: this.secret, seq: this.sequence};
         return JSON.stringify(value);    
     }
-
-    // static parse(json) {
-
-    // }
-
 }
 
 export class KeyBase {
@@ -91,14 +91,16 @@ export class KeyBase {
 
     // TODO: support multiple algorithms, not just ed25519
     // call with properly formatted protobuf Messages as pubkey and secret
-    set(name, pubkey, secret) {
+    set(name, pubkey, secret, sequence) {
         if (this.keys[name]) {
             throw Error("Cannot overwrite key " + name);
         }
+        sequence = sequence || 0;
         // if they are raw bytes...
         // let res = this.makePair("ed25519", pubkey, secret);
         // if they are already protobuf objects
         let res = new KeyPair("ed25519", pubkey, secret, this.Signature);
+        res.sequence = sequence;
         this.keys[name] = res;
         return res;
     }
@@ -141,7 +143,7 @@ export class KeyBase {
             this.db.createReadStream()
                 .on('data', data => {
                     let name = data.key.toString()
-                    let {pub, sec} = this.parse(data.value);
+                    let {pub, sec, seq} = this.parse(data.value);
                     this.set(name, pub, sec);
                 })
                 .on('error', err => rej(err))
@@ -152,9 +154,9 @@ export class KeyBase {
 
     // parse takes a json serialized KeyPair and reconstructs is
     parse(pair) {
-        let {pub, sec} = JSON.parse(pair);
+        let {pub, sec, seq} = JSON.parse(pair);
         pub = this.PublicKey.fromObject(pub);
         sec = this.PrivateKey.fromObject(sec);
-        return {pub, sec};
+        return {pub, sec, seq};
     }
 }
