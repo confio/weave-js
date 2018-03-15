@@ -61,17 +61,28 @@ describe('Test client against mycoind', () => {
     })
 
     it('Check status works', async () => {
-        // TODO: handle errors better
-        let status = {};
-        try {
-            status = await client.status()
-        } catch (err) {
-            // report what we got and fail
-            console.log(err);
-            expect(err).toBeNull();
-        }
-        let height = status.latest_block_height
-        expect(height).toBeGreaterThan(1);
+        // make sure status returns something...
+        let status = await client.status();
+        expect(status).toBeDefined();
+        expect(status.node_info).toBeDefined();
+    })
+
+    it('Check waiting works', async () => {
+        // ensure we make it to block 3
+        let h = await client.waitForBlock(3);
+        expect(h).toBe(3);
+        h = await client.height()
+        expect(h).toBe(3);
+
+        // now see that waiting immediately ends if old
+        h = await client.waitForBlock(1);
+        expect(h).toBe(3);
+    }, 6000);
+
+    it('Check chainID works', async () => {
+        let chainID = await client.chainID()
+        expect(chainID).toBeDefined();
+        expect(chainID.slice(0, 10)).toEqual('test-chain');
     });
 
     it('Check query state', async () => {

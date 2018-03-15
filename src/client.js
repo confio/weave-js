@@ -3,6 +3,8 @@ import { RpcClient } from 'tendermint';
 // let DefaultURI = "http://localhost:46657";
 let DefaultURI = "ws://localhost:46657";
 
+const sleep = ms => new Promise(res => setTimeout(res, ms));
+
 export class Client {
     constructor(uri) {
         uri = uri || DefaultURI;
@@ -16,6 +18,26 @@ export class Client {
 
     status() {
         return this.client.status();
+    }
+
+    chainID() {
+        return this.client.status()
+            .then(status => status.node_info.network);
+    }
+
+    height() {
+        return this.client.status()
+            .then(status => status.latest_block_height);
+    }
+
+    // waitForBlock will return when block h is reached
+    async waitForBlock(goal) {
+        let h = await this.height();
+        while (h < goal) {
+            await sleep(1000);
+            h = await this.height();
+        }
+        return h;
     }
 
     close() {
