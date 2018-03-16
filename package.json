@@ -15,8 +15,8 @@
     "tdd": "jest --watch",
     "test:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --watch",
     "start": "webpack-dev-server --config webpack/demo.js",
-    "build": "webpack --config webpack/build.js --output-filename=weave.js --output-path=lib/",
-    "build:min": "webpack -p --config webpack/build_min.js --output-filename=weave.min.js --output-path=lib/",
+    "build": "webpack --config webpack/build.js --output-path=lib/",
+    "build:min": "webpack -p --config webpack/build_min.js --output-path=lib/",
     "build:all": "npm run build && npm run build:min",
     "build:lib": "npm run build && npm run build:min",
     "prepublishOnly": "npm test && rimraf lib/** && npm run build:lib",
@@ -25,13 +25,15 @@
     "packProto": "yarn run pbjs `yarn run -s findProto` -t json -o src/weave.json"
   },
   "dependencies": {
+    "bufferutil": "^3.0.3",
     "deep-equal": "^1.0.1",
     "js-nacl": "^1.2.2",
     "leveldown": "^3.0.0",
     "levelup": "^2.0.2",
     "protobufjs": "^6.8.6",
     "sha.js": "^2.4.10",
-    "tendermint": "^3.0.0"
+    "tendermint": "^3.0.0",
+    "utf-8-validate": "^4.0.0"
   },
   "devDependencies": {
     "babel-core": "^6.23.1",

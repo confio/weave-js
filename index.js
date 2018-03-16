@@ -1,1 +1,1 @@
-module.exports = require('./lib/weave.js');
+module.exports = require('./lib/weave.node.js');
