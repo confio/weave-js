@@ -1,3 +1,5 @@
+/* jshint esversion: 6 */
+
 import protobuf from "protobufjs";
 
 import { RpcClient } from './tendermint';
@@ -124,7 +126,7 @@ export class Client {
     // the parsed set, or null if no set.
     async queryParseOne(data, path, model, keyMap) {
         let {h, parsed} = await this.queryParse(data, path, model, keyMap);
-        if (parsed.length == 0) {
+        if (parsed.length === 0) {
             return {h, parsed: null};
         }
         return {h, parsed: parsed[0]};
