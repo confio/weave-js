@@ -1,5 +1,6 @@
-// import { RpcClient } from 'tendermint';
 import protobuf from "protobufjs";
+
+import { RpcClient } from './tendermint';
 import {weave} from "./proto";
 
 let ResultSet = weave.app.ResultSet;

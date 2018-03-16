@@ -10,6 +10,7 @@ module.exports = {
     },
     module: {
         rules: [{
+            exclude: /nacl_factory.js$/,
             test: /\.(js|jsx)$/,
             use: [{
                 loader: 'babel-loader',

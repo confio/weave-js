@@ -11,11 +11,12 @@ module.exports = {
     },
     module: {
         rules: [{
-                test: /\.jsx?$/,
-                use: [
-                    { loader: 'babel-loader'}
-                ]
-            }]
+            exclude: /nacl_factory.js$/,
+            test: /\.jsx?$/,
+            use: [
+                { loader: 'babel-loader'}
+            ]
+        }]
     },
     node: {
         fs: "empty"
