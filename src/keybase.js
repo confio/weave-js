@@ -1,14 +1,17 @@
-import { loadModels, pbToObj, objToPB} from './proto';
+import { weave , pbToObj, objToPB} from './proto';
 import { initNacl, generateKeyPair, signBytes, sign, verify, getAddress } from './crypto';
+
+let Signature = weave.crypto.Signature;
+let PublicKey = weave.crypto.PublicKey;
+let PrivateKey = weave.crypto.PrivateKey;
 
 // KeyPair contains PrivateKey, PublicKey protobuf Messages
 // right now only supports ed25519, but should be more generally compatible
 class KeyPair {
-    constructor(algo, pubkey, secret, Signature) {
+    constructor(algo, pubkey, secret) {
         this.algo = algo;
         this.pubkey = pubkey;
         this.secret = secret;
-        this.Signature = Signature;
         this.sequence = 0;
     }
 
@@ -35,7 +38,7 @@ class KeyPair {
         this.sequence++;
         let bz = signBytes(msg, chainID, seq);
         let sig = sign(bz, this.secBytes());
-        let wrap = this.Signature.create();
+        let wrap = Signature.create();
         wrap[this.algo] = sig;
         return {sig: wrap, seq};
     }
@@ -47,15 +50,12 @@ class KeyPair {
 
     stringify() {
         let value = {pub: this.pubkey, sec: this.secret, seq: this.sequence};
-        return JSON.stringify(value);    
+        return JSON.stringify(value);
     }
 }
 
 export class KeyBase {
-    constructor(models){
-        this.PrivateKey = models.PrivateKey;
-        this.PublicKey = models.PublicKey;
-        this.Signature = models.Signature;
+    constructor(){
         this.keys = {};
         this.db = null;
     }
@@ -63,19 +63,16 @@ export class KeyBase {
     // setup will init all modules
     // protoPath is the name of the .proto file and packageName used inside of it
     // db must be levelup compliant
-    static setup(protoPath, packageName, db) {
-        return initNacl().then(() =>
-            loadModels(protoPath, packageName, ['PrivateKey', 'PublicKey', 'Signature'])
-        ).then(models => new KeyBase(models))
-         .then(kb => kb.load(db));
+    static setup(db) {
+        return initNacl().then(() => new KeyBase().load(db));
     }
 
     makePair(algo, pubkey, secret) {
-        let pub = this.PublicKey.create();
+        let pub = PublicKey.create();
         pub[algo] = Buffer.from(pubkey);
-        let priv = this.PrivateKey.create();
+        let priv = PrivateKey.create();
         priv[algo] = Buffer.from(secret);
-        return new KeyPair(algo, pub, priv, this.Signature);
+        return new KeyPair(algo, pub, priv);
     }
 
     // TODO: support multiple algorithms, not just ed25519
@@ -99,7 +96,7 @@ export class KeyBase {
         // if they are raw bytes...
         // let res = this.makePair("ed25519", pubkey, secret);
         // if they are already protobuf objects
-        let res = new KeyPair("ed25519", pubkey, secret, this.Signature);
+        let res = new KeyPair("ed25519", pubkey, secret);
         res.sequence = sequence;
         this.keys[name] = res;
         return res;
@@ -155,8 +152,8 @@ export class KeyBase {
     // parse takes a json serialized KeyPair and reconstructs is
     parse(pair) {
         let {pub, sec, seq} = JSON.parse(pair);
-        pub = this.PublicKey.fromObject(pub);
-        sec = this.PrivateKey.fromObject(sec);
+        pub = PublicKey.fromObject(pub);
+        sec = PrivateKey.fromObject(sec);
         return {pub, sec, seq};
     }
 }

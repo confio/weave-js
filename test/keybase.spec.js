@@ -12,12 +12,12 @@ describe('Keybase crypto helpers', () => {
 
     it('Basic add', async () => {
         // TODO: with db later
-        let keybase = await KeyBase.setup(protoPath, "mycoin");
+        let keybase = await KeyBase.setup();
         expect(keybase.length).toBe(0);
 
         let one = keybase.add('john');
         expect(keybase.length).toBe(1);
-        expect(one).not.toBeNull(); 
+        expect(one).not.toBeNull();
         expect(keybase.get('john')).not.toBeUndefined();
         expect(one.address().length).toBe(40);
 
@@ -37,27 +37,27 @@ describe('Keybase crypto helpers', () => {
         expect(keybase.length).toBe(2);
         expect(two).not.toBeUndefined();
         expect(two.verify(msg, sig, chain, seq)).toBe(false);
-        
+
         expect(() => keybase.add('john')).toThrowError();
     });
 
-    it('Check KeyPair ser/deser', async () => {        
-        let keybase = await KeyBase.setup(protoPath, "mycoin");
+    it('Check KeyPair ser/deser', async () => {
+        let keybase = await KeyBase.setup();
         let orig = keybase.add('orig');
         orig.sequence = 22;
 
         let ser = orig.stringify();
         let {pub, sec, seq} = keybase.parse(ser);
         expect(pub).toEqual(orig.pubkey);
-        expect(sec).toEqual(orig.secret);        
-        expect(seq).toEqual(orig.sequence);        
+        expect(sec).toEqual(orig.secret);
+        expect(seq).toEqual(orig.sequence);
     });
 
     it('Check persistence', async() => {
         // use leveldown('path') in cli, leveljs() in browser
         let store = memdown();
         let up = await openDB(store);
-        let keybase = await KeyBase.setup(protoPath, "mycoin", up);
+        let keybase = await KeyBase.setup(up);
 
         expect(keybase.length).toBe(0);
         let addr = keybase.add('demo').address();
@@ -66,9 +66,9 @@ describe('Keybase crypto helpers', () => {
 
         // await up.close();
         // let up = await db.openDB(store);
-        
+
         // open a second copy for keybase
-        let k2 = await KeyBase.setup(protoPath, "mycoin", up);
+        let k2 = await KeyBase.setup(up);
         expect(k2.length).toBe(1);
         let demo = k2.get('demo');
         expect(demo).not.toBeUndefined();
@@ -78,9 +78,9 @@ describe('Keybase crypto helpers', () => {
     // it('Check golang compatibility', async () => {
     //     await initNacl();
     //     const models = await loadModels(protoPath, "mycoin", ["PrivateKey", "PublicKey", "Tx", "StdSignature"]);
-    
-    //     const gotx = await loadFixtures("unsigned_tx"); 
-    //     const gosigned = await loadFixtures("signed_tx"); 
+
+    //     const gotx = await loadFixtures("unsigned_tx");
+    //     const gosigned = await loadFixtures("signed_tx");
     //     const goprivkey = await loadFixtures("priv_key");
     //     const gopubkey = await loadFixtures("pub_key");
 

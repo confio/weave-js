@@ -2,7 +2,7 @@ import path from "path";
 import {loadFixtures} from './helpers/fixtures';
 import {transforms, manyFlat, flatten} from './helpers/transform';
 
-import { loadModels, pbToObj, objToPB} from '../src/proto';
+import { weave, pbToObj, objToPB} from '../src/proto';
 import { initNacl, generateKeyPair, signBytes, sign, verify, getAddress } from '../src/crypto';
 
 let protoPath = path.resolve(__dirname, "fixtures", "mycoind.proto");
@@ -14,8 +14,8 @@ describe('Crypto primitives', () => {
 
     it('Sign and verify', async () => {
         await initNacl();
-        const gotx = await loadFixtures("unsigned_tx"); 
-        
+        const gotx = await loadFixtures("unsigned_tx");
+
         const keys = generateKeyPair();
         const msg = Buffer.from(gotx.pbHex, 'hex');
         const data = signBytes(msg, gochain, goseq);
@@ -26,17 +26,16 @@ describe('Crypto primitives', () => {
 
     it('Check golang compatibility', async () => {
         await initNacl();
-        const models = await loadModels(protoPath, "mycoin", ["PrivateKey", "PublicKey", "Tx", "StdSignature"]);
-    
-        const gotx = await loadFixtures("unsigned_tx"); 
-        const gosigned = await loadFixtures("signed_tx"); 
+
+        const gotx = await loadFixtures("unsigned_tx");
+        const gosigned = await loadFixtures("signed_tx");
         const goprivkey = await loadFixtures("priv_key");
         const gopubkey = await loadFixtures("pub_key");
 
         // This loads keys as buffers
-        const txSig = models.Tx.decode(gosigned.pbBuffer()).signatures[0];
-        const priv = models.PrivateKey.decode(goprivkey.pbBuffer()).ed25519;
-        const pub = models.PublicKey.decode(gopubkey.pbBuffer()).ed25519;
+        const txSig = weave.app.Tx.decode(gosigned.pbBuffer()).signatures[0];
+        const priv = weave.crypto.PrivateKey.decode(goprivkey.pbBuffer()).ed25519;
+        const pub = weave.crypto.PublicKey.decode(gopubkey.pbBuffer()).ed25519;
         const msg = Buffer.from(gotx.pbHex, 'hex');
 
         // make sure we calculate addresses the same as the signature

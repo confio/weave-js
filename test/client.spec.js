@@ -4,7 +4,7 @@ import path from "path";
 import util from 'util';
 import {WritableStreamBuffer} from 'stream-buffers';
 
-import {KeyBase, Client, pbToObj, loadModels} from '../src';
+import {KeyBase, Client, pbToObj, weave} from '../src';
 
 const run = util.promisify(execFile);
 
@@ -29,7 +29,7 @@ describe('Test client against mycoind', () => {
             .catch(err => {console.log(err.stderr); expect(err).toBeUndefined()});
 
         // create a new key to use
-        let keybase = await KeyBase.setup(protoPath, "mycoin");
+        let keybase = await KeyBase.setup();
         user = keybase.add('demo');
         user2 = keybase.add('new_guy');
         let addr = user.address();
@@ -86,7 +86,7 @@ describe('Test client against mycoind', () => {
     });
 
     it('Check query state', async () => {
-        let models = await loadModels(protoPath, "mycoin", ["Set"]);
+        let Set = weave.cash.Set;
 
         let addr = user.address();
         // let a = client.query(addr, "/foo");
@@ -105,7 +105,7 @@ describe('Test client against mycoind', () => {
         const prefix = new Buffer("cash:").toString('hex');
         expect(match[0].key.toString('hex')).toEqual(prefix+addr);
 
-        // const parse = (val) => models.Set.toObject(models.Set.decode(val), {longs: Number})
+        // const parse = (val) => Set.toObject(models.Set.decode(val), {longs: Number})
         // let obj = parse(match[0].value);
         // console.log(obj);
 
@@ -113,7 +113,7 @@ describe('Test client against mycoind', () => {
         const getAddr = (key) => ({address: key.slice(5).toString('hex')});
         expect(getAddr(match[0].key).address).toEqual(addr);
 
-        let {parsed} = await client.queryParseOne(addr, "/wallets", models.Set, getAddr);
+        let {parsed} = await client.queryParseOne(addr, "/wallets", Set, getAddr);
         expect(parsed).not.toBeNull();
         expect(parsed.address).toEqual(addr);
         expect(parsed.coins.length).toEqual(1);
@@ -123,13 +123,12 @@ describe('Test client against mycoind', () => {
     })
 
     it('Send a tx', async () => {
-        const models = await loadModels(protoPath, "mycoin",
-            ["Set", "SendMsg", "Coin", "StdSignature", "Tx"]);
         const amount = 50000;
+        let Set = weave.cash.Set;
         let txresp;
 
         // post it to server
-        let tx = buildTx(models, user, user2, amount, 'MYC', chainID);
+        let tx = buildSendTx(user, user2, amount, 'MYC', chainID);
         try {
             txresp = await client.sendTx(tx)
         } catch (err) {
@@ -141,13 +140,13 @@ describe('Test client against mycoind', () => {
         // wait for one block
         await client.waitForBlock(txresp.height+1)
 
-        // query states        
+        // query states
         const getAddr = (key) => ({address: key.slice(5).toString('hex')});
-        let {parsed: sender} = await client.queryParseOne(user.address(), "/wallets", models.Set, getAddr);
-        let {parsed: rcpt} = await client.queryParseOne(user2.address(), "/wallets", models.Set, getAddr);
+        let {parsed: sender} = await client.queryParseOne(user.address(), "/wallets", Set, getAddr);
+        let {parsed: rcpt} = await client.queryParseOne(user2.address(), "/wallets", Set, getAddr);
         expect(sender).toBeTruthy();
         expect(rcpt).toBeTruthy();
-        
+
         expect(sender.address).toEqual(user.address());
         expect(sender.coins.length).toEqual(1);
         expect(sender.coins[0].whole).toEqual(123456789-amount);
@@ -158,30 +157,30 @@ describe('Test client against mycoind', () => {
     })
 })
 
-// buildTx needs to be abstracted and added to the library
-function buildTx(models, sender, rcpt, amount, currency, chainID) {
+// buildSendTx needs to be abstracted and added to the library
+function buildSendTx(sender, rcpt, amount, currency, chainID) {
         // build a transaction
-        let msg = models.SendMsg.create({
+        let msg = weave.cash.SendMsg.create({
             src: sender.addressBytes(),
             dest: rcpt.addressBytes(),
-            amount: models.Coin.create({whole: amount, ticker: currency}),
+            amount: weave.x.Coin.create({whole: amount, ticker: currency}),
             memo: 'Test Tx'
         });
-        let tx = models.Tx.create({
+        let tx = weave.app.Tx.create({
             sendMsg: msg
         })
-        let bz = models.Tx.encode(tx).finish();
+        let bz = weave.app.Tx.encode(tx).finish();
 
         // sign it (with chain-id)
         let {sig, seq} = sender.sign(bz, chainID);
         expect(seq).toBe(0);
-        let std = models.StdSignature.create({
+        let std = weave.sigs.StdSignature.create({
             pubKey: sender.pubkey,
             signature: sig
         });
         tx.signatures = [std];
 
-        let txbz = models.Tx.encode(tx).finish();
+        let txbz = weave.app.Tx.encode(tx).finish();
         return txbz;
 }
 
