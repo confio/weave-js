@@ -1,8 +1,8 @@
 import { RpcClient } from 'tendermint';
 import protobuf from "protobufjs";
+import {weave} from "./proto";
 
-import weave from './weave.json';
-let ResultSet = protobuf.Root.fromJSON(weave).lookupType('app.ResultSet');
+let ResultSet = weave.app.ResultSet;
 
 function parseResultSet(data) {
     if (typeof data === 'string') {
@@ -10,11 +10,6 @@ function parseResultSet(data) {
     }
     return ResultSet.decode(data).results;
 }
-
-// TODO: automate this tool in build process
-// node ./node_modules/protobufjs/cli/bin/pbjs
-// eg.
-// node ./node_modules/protobufjs/cli/bin/pbjs -t json src/results.proto > src/results.json
 
 // let DefaultURI = "http://localhost:46657";
 let DefaultURI = "ws://localhost:46657";

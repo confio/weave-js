@@ -1,5 +1,22 @@
 import protobuf from "protobufjs";
 import path from "path";
+import weaveJson from "./weave.json";
+
+export function loadJSON(json) {
+    let root = protobuf.Root.fromJSON(json);
+    let out = {};
+    for (let [ns, space] of Object.entries(root.nested)) {
+        let sub = {};
+        for (let [ts, type] of Object.entries(space.nested)) {
+            sub[ts] = type
+        }
+        out[ns] = sub;
+    }
+    return out;
+}
+
+// this contains all model info of weave
+export let weave = loadJSON(weaveJson);
 
 // loadModels imports a file with the given packageName
 // and accepts a list of strings (messages)
