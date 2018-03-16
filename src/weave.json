@@ -1,0 +1,220 @@
+{
+  "nested": {
+    "orm": {
+      "nested": {
+        "MultiRef": {
+          "fields": {
+            "refs": {
+              "rule": "repeated",
+              "type": "bytes",
+              "id": 1
+            }
+          }
+        },
+        "Counter": {
+          "fields": {
+            "count": {
+              "type": "int64",
+              "id": 1
+            }
+          }
+        }
+      }
+    },
+    "crypto": {
+      "nested": {
+        "PublicKey": {
+          "oneofs": {
+            "pub": {
+              "oneof": [
+                "ed25519"
+              ]
+            }
+          },
+          "fields": {
+            "ed25519": {
+              "type": "bytes",
+              "id": 1
+            }
+          }
+        },
+        "PrivateKey": {
+          "oneofs": {
+            "priv": {
+              "oneof": [
+                "ed25519"
+              ]
+            }
+          },
+          "fields": {
+            "ed25519": {
+              "type": "bytes",
+              "id": 1
+            }
+          }
+        },
+        "Signature": {
+          "oneofs": {
+            "sig": {
+              "oneof": [
+                "ed25519"
+              ]
+            }
+          },
+          "fields": {
+            "ed25519": {
+              "type": "bytes",
+              "id": 1
+            }
+          }
+        }
+      }
+    },
+    "app": {
+      "nested": {
+        "Tx": {
+          "oneofs": {
+            "sum": {
+              "oneof": [
+                "sendMsg"
+              ]
+            }
+          },
+          "fields": {
+            "sendMsg": {
+              "type": "cash.SendMsg",
+              "id": 1
+            },
+            "fees": {
+              "type": "cash.FeeInfo",
+              "id": 20
+            },
+            "signatures": {
+              "rule": "repeated",
+              "type": "sigs.StdSignature",
+              "id": 21
+            }
+          }
+        },
+        "ResultSet": {
+          "fields": {
+            "results": {
+              "rule": "repeated",
+              "type": "bytes",
+              "id": 1
+            }
+          }
+        }
+      }
+    },
+    "sigs": {
+      "nested": {
+        "UserData": {
+          "fields": {
+            "pubKey": {
+              "type": "crypto.PublicKey",
+              "id": 1
+            },
+            "sequence": {
+              "type": "int64",
+              "id": 2
+            }
+          }
+        },
+        "StdSignature": {
+          "fields": {
+            "sequence": {
+              "type": "int64",
+              "id": 1
+            },
+            "pubKey": {
+              "type": "crypto.PublicKey",
+              "id": 2
+            },
+            "address": {
+              "type": "bytes",
+              "id": 3
+            },
+            "signature": {
+              "type": "crypto.Signature",
+              "id": 4
+            }
+          }
+        }
+      }
+    },
+    "cash": {
+      "nested": {
+        "Set": {
+          "fields": {
+            "coins": {
+              "rule": "repeated",
+              "type": "x.Coin",
+              "id": 1
+            }
+          }
+        },
+        "SendMsg": {
+          "fields": {
+            "src": {
+              "type": "bytes",
+              "id": 1
+            },
+            "dest": {
+              "type": "bytes",
+              "id": 2
+            },
+            "amount": {
+              "type": "x.Coin",
+              "id": 3
+            },
+            "memo": {
+              "type": "string",
+              "id": 4
+            },
+            "ref": {
+              "type": "bytes",
+              "id": 5
+            }
+          }
+        },
+        "FeeInfo": {
+          "fields": {
+            "payer": {
+              "type": "bytes",
+              "id": 1
+            },
+            "fees": {
+              "type": "x.Coin",
+              "id": 2
+            }
+          }
+        }
+      }
+    },
+    "x": {
+      "nested": {
+        "Coin": {
+          "fields": {
+            "whole": {
+              "type": "int64",
+              "id": 1
+            },
+            "fractional": {
+              "type": "int64",
+              "id": 2
+            },
+            "ticker": {
+              "type": "string",
+              "id": 3
+            },
+            "issuer": {
+              "type": "string",
+              "id": 4
+            }
+          }
+        }
+      }
+    }
+  }
+}

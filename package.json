@@ -19,7 +19,10 @@
     "build:min": "webpack -p --config webpack/build_min.js --output-filename=zliq.min.js --output-path=lib/",
     "build:all": "npm run build && npm run build:min",
     "build:lib": "npm run build && npm run build:min",
-    "prepublishOnly": "npm test && rimraf lib/** && npm run build:lib"
+    "prepublishOnly": "npm test && rimraf lib/** && npm run build:lib",
+    "pbjs": "node ./node_modules/protobufjs/cli/bin/pbjs",
+    "findProto": "find $GOPATH/src/github.com/confio/weave -name '*.proto' -not -path '*/vendor/*'",
+    "packProto": "yarn run pbjs `yarn run -s findProto` -t json -o src/weave.json"
   },
   "dependencies": {
     "deep-equal": "^1.0.1",

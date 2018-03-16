@@ -1,8 +1,8 @@
 import { RpcClient } from 'tendermint';
 import protobuf from "protobufjs";
 
-import results from './results.json';
-let ResultSet = protobuf.Root.fromJSON(results).lookupType('app.ResultSet');
+import weave from './weave.json';
+let ResultSet = protobuf.Root.fromJSON(weave).lookupType('app.ResultSet');
 
 function parseResultSet(data) {
     if (typeof data === 'string') {
