@@ -1,20 +1,23 @@
 var path = require('path');
 
 module.exports = {
-    devtool: '#source-map',
+    devtool: '#source_map',
     entry: './src/index.js',
     output: {
         path: path.resolve(__dirname, 'lib'),
-        filename: 'zliq.js',
-        library: 'zliq',
+        filename: 'weave.js',
+        library: 'weave',
         libraryTarget: 'umd'
     },
     module: {
         rules: [{
-            test: /\.(js|jsx)$/,
-            use: [{
-                loader: 'babel-loader'
+                test: /\.jsx?$/,
+                use: [
+                    { loader: 'babel-loader'}
+                ]
             }]
-        }]
+    },
+    node: {
+        fs: "empty"
     }
 }

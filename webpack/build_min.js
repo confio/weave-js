@@ -4,8 +4,8 @@ module.exports = {
     entry: './src/index.js',
     output: {
         path: path.resolve(__dirname, 'lib'),
-        filename: 'zliq.js',
-        library: 'zliq',
+        filename: 'weave.js',
+        library: 'weave',
         libraryTarget: 'umd'
     },
     module: {
@@ -18,5 +18,8 @@ module.exports = {
                 }
             }]
         }]
+    },
+    node: {
+        fs: "empty"
     }
 }

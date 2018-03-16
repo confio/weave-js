@@ -15,8 +15,8 @@
     "tdd": "jest --watch",
     "test:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --watch",
     "start": "webpack-dev-server --config webpack/demo.js",
-    "build": "webpack --config webpack/build.js --output-filename=zliq.js --output-path=lib/",
-    "build:min": "webpack -p --config webpack/build_min.js --output-filename=zliq.min.js --output-path=lib/",
+    "build": "webpack --config webpack/build.js --output-filename=weave.js --output-path=lib/",
+    "build:min": "webpack -p --config webpack/build_min.js --output-filename=weave.min.js --output-path=lib/",
     "build:all": "npm run build && npm run build:min",
     "build:lib": "npm run build && npm run build:min",
     "prepublishOnly": "npm test && rimraf lib/** && npm run build:lib",
@@ -31,7 +31,6 @@
     "levelup": "^2.0.2",
     "protobufjs": "^6.8.6",
     "sha.js": "^2.4.10",
-    "stacktrace-js": "^2.0.0",
     "tendermint": "^3.0.0"
   },
   "devDependencies": {

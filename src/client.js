@@ -1,4 +1,4 @@
-import { RpcClient } from 'tendermint';
+// import { RpcClient } from 'tendermint';
 import protobuf from "protobufjs";
 import {weave} from "./proto";
 
