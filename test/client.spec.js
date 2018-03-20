@@ -57,7 +57,8 @@ describe('Test client against mycoind', () => {
         await sleep(100);
         tm.kill();
         abci.kill();
-        console.log(abciLog.getContentsAsString('utf8'));
+        // console.log(abciLog.getContentsAsString('utf8'));
+        console.log(tmLog.getContentsAsString('utf8'));
     })
 
     it('Check status works', async () => {
@@ -138,6 +139,7 @@ describe('Test client against mycoind', () => {
         }
 
         // wait for one block
+        // console.log(JSON.stringify(txresp, null, 2))
         await client.waitForBlock(txresp.height+1)
 
         // query states
@@ -154,6 +156,15 @@ describe('Test client against mycoind', () => {
         expect(rcpt.address).toEqual(user2.address());
         expect(rcpt.coins.length).toEqual(1);
         expect(rcpt.coins[0].whole).toEqual(amount);
+
+        // query for the tx
+        const txRes = await client.search("cash", user.address())
+            .catch(err => console.log(JSON.stringify(err)))
+        console.log(txRes)
+
+        // const txRes2 = await client.search("cash", user2.address())
+        //         .catch(err => console.log(JSON.stringify(err)))
+        // console.log(txRes2)
     })
 })
 

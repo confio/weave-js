@@ -59,6 +59,18 @@ export class Client {
         return this.client.broadcastTxCommit({tx})
     }
 
+    // search constructs a /tx_search query with bucket=<hex key>
+    // as set by KeyTagger in weave
+    search(bucket, key) {
+        if (typeof key !== 'string') {
+            key = key.toString('hex');
+        }
+        key = key.toUpperCase();
+        const query = bucket + "='" + key + "'";
+        console.log(query);
+        return this.client.txSearch({query});
+    }
+
     // waitForBlock will return when block h is reached
     async waitForBlock(goal) {
         let h = await this.height();

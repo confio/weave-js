@@ -17,6 +17,9 @@ module.exports = [
   'num_unconfirmed_txs',
   'commit',
 
+  'tx',
+  'tx_search',
+
   'abci_query',
   'abci_info',
   'abci_proof',
