@@ -11,7 +11,8 @@ var webConfig = {
     },
     module: {
         rules: [{
-            exclude: /nacl_factory.js$/,
+            // exclude: /nacl_factory.js$/,
+            exclude: /node_modules/,
             test: /\.jsx?$/,
             use: [
                 { loader: 'babel-loader'}
@@ -34,7 +35,8 @@ var nodeConfig = {
     },
     module: {
         rules: [{
-            exclude: /nacl_factory.js$/,
+            // exclude: /nacl_factory.js$/,
+            exclude: /node_modules/,
             test: /\.jsx?$/,
             use: [
                 { loader: 'babel-loader'}

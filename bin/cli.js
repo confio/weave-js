@@ -20,4 +20,13 @@ r.context.Client = weave.Client;
 r.context.models = weave.weave;
 r.context.pbToObj = weave.pbToObj;
 r.context.loadKeys = loadKeys;
+r.context.pprint = o => console.log(JSON.stringify(o, null, 2));
 
+// load the keys from a leveldb keystore
+// TODO: better cli parsing
+let args = process.argv.slice(2);
+if (args.length > 0) {
+    loadKeys(args[0])
+        .then(keys => {r.context.keys = keys})
+        .then(() => process.stdout.write("Keys loaded\n> "));
+}

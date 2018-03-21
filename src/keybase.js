@@ -75,6 +75,13 @@ export class KeyBase {
         return new KeyPair(algo, pub, priv);
     }
 
+    list() {
+        // if only there were a nicer mapper on objects....
+        return Object.entries(this.keys)
+            .map( ([k, v]) => ({[k]: v.address()}))
+            .reduce((acc, o) => Object.assign(acc, o), {})
+    }
+
     // TODO: support multiple algorithms, not just ed25519
     add(name) {
         if (this.keys[name]) {
