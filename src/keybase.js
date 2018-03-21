@@ -148,7 +148,7 @@ export class KeyBase {
                 .on('data', data => {
                     let name = data.key.toString()
                     let {pub, sec, seq} = this.parse(data.value);
-                    this.set(name, pub, sec);
+                    this.set(name, pub, sec, seq);
                 })
                 .on('error', err => rej(err))
                 .on('close', () => res(this))
