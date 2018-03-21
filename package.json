@@ -12,6 +12,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
+    "cli": "node bin/cli.js",
     "tdd": "jest --watch",
     "test:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --watch",
     "start": "webpack-dev-server --config webpack/demo.js",
@@ -25,6 +26,7 @@
     "packProto": "yarn run pbjs `yarn run -s findProto` -t json -o src/weave.json"
   },
   "dependencies": {
+    "async-repl": "ef4/async-repl",
     "bufferutil": "^3.0.3",
     "deep-equal": "^1.0.1",
     "js-nacl": "^1.2.2",

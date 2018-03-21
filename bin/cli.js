@@ -2,27 +2,17 @@ const repl = require("repl");
 const weave = require("../lib/weave.node.js");
 const leveldown = require("leveldown");
 
-function resolvePromise(eval) {
-    return function replEvalPromise(cmd, ctx, filename, cb) {
-        eval(cmd, ctx, filename, result => {
-            if (result instanceof Promise) {
-                return result
-                    .then(response => cb(null, response))
-            }
-            return cb(null, result);
-        });
-    }
-}
+// note: this is only on master, not yet in 0.3 on npm
+const stubber = require("async-repl/stubber");
 
 function loadKeys(file) {
     return weave.openDB(leveldown(file))
         .then(db => weave.KeyBase.setup(db));
 }
 
-// let r = repl.start({prompt: "> ", eval: replEvalPromise});
 let r = repl.start("> ");
-// r.eval = resolvePromise(r.eval);
-// console.log(r.eval);
+// wraps the eval loop to provide async/await support
+stubber(r);
 
 r.context.help = "Use KeyBase.setup() or loadKeys(file) and new Client(uri)";
 r.context.KeyBase = weave.KeyBase;
