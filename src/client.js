@@ -173,7 +173,7 @@ export class Client {
     async queryParseOne(data, path, model, keyMap) {
         let {height, parsed} = await this.queryParse(data, path, model, keyMap);
         if (parsed.length === 0) {
-            return {h, parsed: null};
+            return {height, parsed: null};
         }
         return {height, parsed: parsed[0]};
     }
