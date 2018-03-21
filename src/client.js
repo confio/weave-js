@@ -88,18 +88,20 @@ export class Client {
     //
     // TODO: do we want to do something like this???
     // Buffer.prototype.toJSON = function () {return this.toString("hex")};
-    async searchParse(bucket, key, Tx, Data) {
+    async searchParse(bucket, key, Tx, opts) {
+        if (!opts) {
+            opts = {longs: Number};
+        }
+
         let res = await this.search(bucket, key);
         if (!res || res.length === 0) {
             return [];
         }
         let parsed = res.map(({height, tx_result, tx}) => {
-            tx = pbToObj(Tx, Buffer.from(tx, 'base64'), {longs: Number});
-            // data is base64, let's parse it or make it hex
+            // parse the tx into shape
+            tx = pbToObj(Tx, Buffer.from(tx, 'base64'), opts);
+            // data is just a raw buffer
             let data = Buffer.from(tx_result.data, 'base64');
-            if (Data) {
-                data = pbToObj(Data, data, {longs: Number});
-            }
             return {height, tx, data};
         });
         return parsed;
