@@ -76,18 +76,17 @@ export class Client {
         }
         key = key.toUpperCase();
         const query = bucket + "='" + key + "'";
-        console.log(query);
         return this.client.txSearch({query});
     }
 
     // waitForBlock will return when block h is reached
     async waitForBlock(goal) {
-        let h = await this.height();
-        while (h < goal) {
+        let height = await this.height();
+        while (height < goal) {
             await sleep(1000);
-            h = await this.height();
+            height = await this.height();
         }
-        return h;
+        return height;
     }
 
     // queryRaw returns the direct response as a promise
@@ -109,11 +108,11 @@ export class Client {
         }
 
         // TODO: return
-        let h = parseInt(q.height, 10)
+        let height = parseInt(q.height, 10)
 
         // no response, empty array, done
         if (!q.key) {
-            return {h, results: []};
+            return {height, results: []};
         }
 
         // now parse them both and join....
@@ -124,7 +123,7 @@ export class Client {
         }
 
         let results = keys.map((key, i) => ({key, value: values[i]}));
-        return {h, results};
+        return {height, results};
     }
 
     // queryParse takes a protobuf `model` to decode the raw bytes,
@@ -134,23 +133,23 @@ export class Client {
         keyMap = keyMap || defaultKeyMap;
         const parse = (val) => model.toObject(model.decode(val), {longs: Number})
 
-        let {h, results} = await this.query(data, path);
+        let {height, results} = await this.query(data, path);
         let parsed = results.map((res) => {
             let k = keyMap(res.key);
             let v = parse(res.value);
             return Object.assign(k, v)
         });
-        return {h, parsed};
+        return {height, parsed};
     }
 
     // queryParseOne calls query parse and returns the first element of
     // the parsed set, or null if no set.
     async queryParseOne(data, path, model, keyMap) {
-        let {h, parsed} = await this.queryParse(data, path, model, keyMap);
+        let {height, parsed} = await this.queryParse(data, path, model, keyMap);
         if (parsed.length === 0) {
             return {h, parsed: null};
         }
-        return {h, parsed: parsed[0]};
+        return {height, parsed: parsed[0]};
     }
 }
 

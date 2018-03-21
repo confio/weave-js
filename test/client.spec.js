@@ -96,9 +96,9 @@ describe('Test client against mycoind', () => {
         await client.query(addr, "/foo").catch(err => expect(err).toBeTruthy());
         await client.query(addr).catch(err => expect(err).toBeUndefined());
 
-        let {h, results: empty} = await client.query(addr);
+        let {height, results: empty} = await client.query(addr);
         // verify there is a meaninful height also returned
-        expect(h).toBeGreaterThan(3);
+        expect(height).toBeGreaterThan(3);
         expect(empty.length).toBe(0);
 
         // straight-forward binary query
@@ -162,9 +162,9 @@ describe('Test client against mycoind', () => {
             .catch(err => pprint(err))
         pprint(txRes)
 
-        const txRes2 = await client.search("cash", user2.address())
-            .catch(err => pprint(err))
-        pprint(txRes2)
+        // const txRes2 = await client.search("cash", user2.address())
+        //     .catch(err => pprint(err))
+        // pprint(txRes2)
     })
 })
 
