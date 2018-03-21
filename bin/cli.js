@@ -19,6 +19,7 @@ r.context.KeyBase = weave.KeyBase;
 r.context.Client = weave.Client;
 r.context.models = weave.weave;
 r.context.pbToObj = weave.pbToObj;
+r.context.buildSendTx = weave.buildSendTx;
 r.context.loadKeys = loadKeys;
 r.context.pprint = o => console.log(JSON.stringify(o, null, 2));
 

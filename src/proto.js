@@ -40,12 +40,15 @@ export async function loadOneModel(filepath, packageName, msg) {
 }
 
 // reads in a buffer or hex encoded string and parses it as a protobuf object
-export function pbToObj(msgClass, buffer) {
+export function pbToObj(msgClass, buffer, opts) {
+    if (opts === undefined) {
+        opts = {bytes: String, longs: Number};
+    }
     if (typeof buffer === 'string') {
         buffer = Buffer.from(buffer, 'hex');
     }
     let decodedMessage = msgClass.decode(buffer);
-    return msgClass.toObject(decodedMessage, {bytes: String, longs: Number});
+    return msgClass.toObject(decodedMessage, opts);
 }
 
 export function objToPB(msgClass, obj) {

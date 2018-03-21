@@ -1,10 +1,12 @@
+/* jshint: use esversion:6 */
+
 import fs from 'fs';
 import {execFile, spawn} from 'child_process';
 import path from "path";
 import util from 'util';
 import {WritableStreamBuffer} from 'stream-buffers';
 
-import {KeyBase, Client, pbToObj, weave} from '../src';
+import {KeyBase, Client, pbToObj, weave, buildSendTx} from '../src';
 
 const run = util.promisify(execFile);
 
@@ -130,7 +132,7 @@ describe('Test client against mycoind', () => {
         let txresp;
 
         // post it to server
-        let tx = buildSendTx(user, user2, amount, 'MYC', chainID);
+        let tx = buildSendTx(weave.app.Tx, user, user2.address(), amount, 'MYC', chainID);
         try {
             txresp = await client.sendTx(tx)
         } catch (err) {
@@ -162,38 +164,13 @@ describe('Test client against mycoind', () => {
             .catch(err => pprint(err))
         pprint(txRes)
 
-        // const txRes2 = await client.search("cash", user2.address())
-        //     .catch(err => pprint(err))
-        // pprint(txRes2)
+        const txRes2 = await client.searchParse("cash", user2.address(), weave.app.Tx)
+            .catch(err => pprint(err))
+        console.log(txRes2[0].tx.sendMsg.src);
+        pprint(txRes2)
+
     })
 })
-
-// buildSendTx needs to be abstracted and added to the library
-function buildSendTx(sender, rcpt, amount, currency, chainID) {
-        // build a transaction
-        let msg = weave.cash.SendMsg.create({
-            src: sender.addressBytes(),
-            dest: rcpt.addressBytes(),
-            amount: weave.x.Coin.create({whole: amount, ticker: currency}),
-            memo: 'Test Tx'
-        });
-        let tx = weave.app.Tx.create({
-            sendMsg: msg
-        })
-        let bz = weave.app.Tx.encode(tx).finish();
-
-        // sign it (with chain-id)
-        let {sig, seq} = sender.sign(bz, chainID);
-        expect(seq).toBe(0);
-        let std = weave.sigs.StdSignature.create({
-            pubKey: sender.pubkey,
-            signature: sig
-        });
-        tx.signatures = [std];
-
-        let txbz = weave.app.Tx.encode(tx).finish();
-        return txbz;
-}
 
 // this returns a buffer with all text, so we can print out in afterAll for debugging
 function viewProc(name, child) {

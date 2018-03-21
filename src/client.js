@@ -3,7 +3,7 @@
 import protobuf from "protobufjs";
 
 import { RpcClient } from './tendermint';
-import {weave} from "./proto";
+import {weave, pbToObj} from "./proto";
 
 let ResultSet = weave.app.ResultSet;
 
@@ -77,6 +77,32 @@ export class Client {
         key = key.toUpperCase();
         const query = bucket + "='" + key + "'";
         return this.client.txSearch({query});
+    }
+
+    // searchParse will call search and extract all Tx bytes into proper Tx
+    // if Data is provided, it will parse the tx result as a protobuf message,
+    // otherwise treat it as raw bytes.
+    // 
+    // all bytes are left as unencoded buffers for later manipulation,
+    // you must encode them as hex/base64 for json output
+    //
+    // TODO: do we want to do something like this???
+    // Buffer.prototype.toJSON = function () {return this.toString("hex")};
+    async searchParse(bucket, key, Tx, Data) {
+        let res = await this.search(bucket, key);
+        if (!res || res.length === 0) {
+            return [];
+        }
+        let parsed = res.map(({height, tx_result, tx}) => {
+            tx = pbToObj(Tx, Buffer.from(tx, 'base64'), {longs: Number});
+            // data is base64, let's parse it or make it hex
+            let data = Buffer.from(tx_result.data, 'base64');
+            if (Data) {
+                data = pbToObj(Data, data, {longs: Number});
+            }
+            return {height, tx, data};
+        });
+        return parsed;
     }
 
     // waitForBlock will return when block h is reached
