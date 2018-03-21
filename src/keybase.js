@@ -1,3 +1,5 @@
+/* jshint esversion: 6 */
+
 import { weave , pbToObj, objToPB} from './proto';
 import { initNacl, generateKeyPair, signBytes, sign, verify, getAddress } from './crypto';
 

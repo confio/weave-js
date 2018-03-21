@@ -5,6 +5,16 @@ import {open} from './db';
 import {Client} from './client';
 import {loadJSON, pbToObj, weave} from './proto';
 
+// makeSignatures signs the bytes and builds a proper StdSignature to append to a tx
+function makeSignatures(sender, bz, chainID) {
+    let {sig, seq} = sender.sign(bz, chainID);
+    let std = weave.sigs.StdSignature.create({
+        pubKey: sender.pubkey,
+        signature: sig,
+        sequence: seq
+    });
+    return [std];
+}
 
 // buildSendTx constructs a sendMsg to move tokens from the sender to rcpt
 // Tx - the app-specific Tx wrapper. We assume they use StdSignature, 
@@ -19,8 +29,7 @@ function buildSendTx(Tx, sender, rcpt, amount, currency, chainID) {
     let msg = weave.cash.SendMsg.create({
         src: sender.addressBytes(),
         dest: rcpt,
-        amount: weave.x.Coin.create({whole: amount, ticker: currency}),
-        memo: 'Test Tx'
+        amount: weave.x.Coin.create({whole: amount, ticker: currency})
     });
     let tx = Tx.create({
         sendMsg: msg
@@ -28,12 +37,7 @@ function buildSendTx(Tx, sender, rcpt, amount, currency, chainID) {
     let bz = Tx.encode(tx).finish();
 
     // sign it (with chain-id)
-    let {sig, seq} = sender.sign(bz, chainID);
-    let std = weave.sigs.StdSignature.create({
-        pubKey: sender.pubkey,
-        signature: sig
-    });
-    tx.signatures = [std];
+    tx.signatures = makeSignatures(sender, bz, chainID);
 
     let txbz = Tx.encode(tx).finish();
     return txbz;

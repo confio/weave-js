@@ -16,6 +16,7 @@ const genesisPath = path.resolve(homeDir, "config", "genesis.json");
 
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 const pprint = o => console.log(JSON.stringify(o, null, 2))
+const getAddr = key => ({address: key.slice(5).toString('hex')});
 
 describe('Test client against mycoind', () => {
     let tm, abci; // to be set in beforeAll
@@ -145,7 +146,6 @@ describe('Test client against mycoind', () => {
         await client.waitForBlock(txresp.height+1)
 
         // query states
-        const getAddr = (key) => ({address: key.slice(5).toString('hex')});
         let {parsed: sender} = await client.queryParseOne(user.address(), "/wallets", Set, getAddr);
         let {parsed: rcpt} = await client.queryParseOne(user2.address(), "/wallets", Set, getAddr);
         expect(sender).toBeTruthy();
@@ -160,16 +160,65 @@ describe('Test client against mycoind', () => {
         expect(rcpt.coins[0].whole).toEqual(amount);
 
         // query for the tx
-        const txRes = await client.search("cash", user.address())
+        const txRes = await client.searchParse("cash", user.address(), weave.app.Tx)
             .catch(err => pprint(err))
-        pprint(txRes)
-
-        const txRes2 = await client.searchParse("cash", user2.address(), weave.app.Tx)
-            .catch(err => pprint(err))
-        console.log(txRes2[0].tx.sendMsg.src);
-        pprint(txRes2)
-
+        expect(txRes.length).toBe(1);
+        expect(txRes[0].height).toBeGreaterThan(3);
+        let found = txRes[0].tx;
+        expect(found.sendMsg).toBeTruthy();
+        expect(found.sendMsg.src.toString('hex')).toEqual(user.address());
+        expect(found.sendMsg.dest.toString('hex')).toEqual(user2.address());
+        expect(found.sendMsg.amount.whole).toEqual(amount);
     })
+
+    it('Send second tx', async () => {
+        const amount = 3500;
+
+        // construct a tx
+        let tx = buildSendTx(weave.app.Tx, user, user2.address(), amount, 'MYC', chainID);
+
+        // parse and verify it
+        let deser = weave.app.Tx.decode(tx);
+        expect(deser.sendMsg.amount.whole.toInt()).toBe(amount);
+        expect(deser.signatures.length).toBe(1);
+        let sig = deser.signatures[0];
+        expect(sig.sequence.toInt()).toBe(1);
+        deser.signatures = null;
+
+        // check it against appended signature
+        let bz = weave.app.Tx.encode(deser).finish();
+        expect(user.verify(bz, sig.signature, chainID, 1)).toBeTruthy();
+        expect(sig.pubKey.ed25519).toEqual(user.pubBytes());
+
+        try {
+            let txresp = await client.sendTx(tx)
+            await client.waitForBlock(txresp.height+1)
+        } catch (err) {
+            // report what we got and fail
+            expect(err).toBeNull();
+        }
+
+        // make sure the money arrived
+        let {parsed} = await client.queryParseOne(user2.address(), "/wallets", weave.cash.Set, getAddr);
+        expect(parsed.address).toEqual(user2.address());
+        expect(parsed.coins.length).toEqual(1);
+        expect(parsed.coins[0].whole).toEqual(amount+50000);
+    });
+
+    it('Tx with bad sequence fails', async () => {
+        const amount = 3500;
+
+        // construct a tx
+        user.sequence = 5;
+        let tx = buildSendTx(weave.app.Tx, user, user2.address(), amount, 'MYC', chainID);
+        try {
+            let txresp = await client.sendTx(tx)
+            expect("previous line should throw").toBeFalsy();
+        } catch (err) {
+            // this is what we expect
+            expect(true).toBeTruthy();
+        }
+    });
 })
 
 // this returns a buffer with all text, so we can print out in afterAll for debugging

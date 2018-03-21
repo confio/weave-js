@@ -1,3 +1,5 @@
+/* jshint esversion: 6 */
+
 import shajs from 'sha.js';
 
 import nacl_factory from 'js-nacl';

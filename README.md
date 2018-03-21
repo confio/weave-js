@@ -28,6 +28,7 @@ In one terminal window (change /tmp/demo.db for wherever you want to store keys)
 
 ```js
 keys.add("demo");
+keys.add("rcpt");
 keys.list();
 await keys.save();
 ```
@@ -82,9 +83,10 @@ Now it's time to make a transaction on the blockchain. Here goes nothing!
 ```js
 let client = new Client()
 let demo = keys.get("demo");
-let rcpt = keys.add("rcpt");
+let rcpt = keys.get("rcpt");
 let chainID = await client.chainID();
 
+// send some money
 let tx = buildSendTx(models.app.Tx, demo, rcpt.address(), 5000, 'CASH', chainID);
 let resp = await client.sendTx(tx);
 pprint(resp);
@@ -94,8 +96,8 @@ pprint(acctRcpt);
 let acctSend = await queryAccount(client, demo.address());
 pprint(acctSend);
 
-// try to send cash back
-tx = buildSendTx(models.app.Tx, rcpt, demo.address(), 1500, 'CASH', chainID);
+// sequence auto-increments, to send a second time
+tx = buildSendTx(models.app.Tx, demo, rcpt.address(), 1500, 'CASH', chainID);
 await client.sendTx(tx);
 acctRcpt = await queryAccount(client, rcpt.address());
 pprint(acctRcpt);
