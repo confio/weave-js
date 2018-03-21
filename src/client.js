@@ -21,6 +21,8 @@ const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 const defaultKeyMap = (key) => ({_key: key})
 
+const perr = o => Error(JSON.stringify(o, null, 2))
+
 export class Client {
     constructor(uri) {
         uri = uri || DefaultURI;
@@ -52,11 +54,18 @@ export class Client {
             .then(status => status.latest_block_height);
     }
 
-    sendTx(tx) {
+    async sendTx(tx) {
         if (typeof tx !== 'string') {
             tx = tx.toString('base64');
         }
-        return this.client.broadcastTxCommit({tx})
+        let resp = await this.client.broadcastTxCommit({tx});
+        if (resp.check_tx.code) {
+            throw perr(resp.check_tx);
+        }
+        if (resp.deliver_tx.code) {
+            throw perr(resp.deliver_tx);
+        }
+        return {hash: resp.hash, height: resp.height};
     }
 
     // search constructs a /tx_search query with bucket=<hex key>

@@ -13,6 +13,7 @@ const homeDir = "/tmp/test-weave-js";
 const genesisPath = path.resolve(homeDir, "config", "genesis.json");
 
 const sleep = ms => new Promise(res => setTimeout(res, ms));
+const pprint = o => console.log(JSON.stringify(o, null, 2))
 
 describe('Test client against mycoind', () => {
     let tm, abci; // to be set in beforeAll
@@ -139,7 +140,6 @@ describe('Test client against mycoind', () => {
         }
 
         // wait for one block
-        // console.log(JSON.stringify(txresp, null, 2))
         await client.waitForBlock(txresp.height+1)
 
         // query states
@@ -159,12 +159,12 @@ describe('Test client against mycoind', () => {
 
         // query for the tx
         const txRes = await client.search("cash", user.address())
-            .catch(err => console.log(JSON.stringify(err)))
-        console.log(txRes)
+            .catch(err => pprint(err))
+        pprint(txRes)
 
-        // const txRes2 = await client.search("cash", user2.address())
-        //         .catch(err => console.log(JSON.stringify(err)))
-        // console.log(txRes2)
+        const txRes2 = await client.search("cash", user2.address())
+            .catch(err => pprint(err))
+        pprint(txRes2)
     })
 })
 
