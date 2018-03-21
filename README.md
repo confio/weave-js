@@ -87,7 +87,7 @@ let rcpt = keys.get("rcpt");
 let chainID = await client.chainID();
 
 // send some money
-let tx = buildSendTx(models.app.Tx, demo, rcpt.address(), 5000, 'CASH', chainID);
+let tx = buildSendTx(demo, rcpt.address(), 5000, 'CASH', chainID);
 let resp = await client.sendTx(tx);
 pprint(resp);
 
@@ -97,7 +97,7 @@ let acctSend = await queryAccount(client, demo.address());
 pprint(acctSend);
 
 // sequence auto-increments, to send a second time
-tx = buildSendTx(models.app.Tx, demo, rcpt.address(), 1500, 'CASH', chainID);
+tx = buildSendTx(demo, rcpt.address(), 1500, 'CASH', chainID);
 await client.sendTx(tx);
 acctRcpt = await queryAccount(client, rcpt.address());
 pprint(acctRcpt);

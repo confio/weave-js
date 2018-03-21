@@ -15,6 +15,7 @@ function loadKeys(file) {
 const getAddr = key => ({address: key.slice(5).toString('hex')});
 const queryAccount = (client, acct) => client.queryParseOne(acct, "/wallets", weave.weave.cash.Set, getAddr);
 const querySigs = (client, acct) => client.queryParseOne(acct, "/auth", weave.weave.sigs.UserData, getAddr);
+const buildSendTx = (sender, rcpt, amount, currency, chainID) => weave.buildSendTx(weave.weave.app.Tx, sender, rcpt, amount, currency, chainID);
 
 let r = repl.start({prompt: "> ", useColors: true, ignoreUndefined: true})
     // if we have a client object with default name, shutdown websocket on exit
@@ -44,7 +45,7 @@ r.context.KeyBase = weave.KeyBase;
 r.context.Client = weave.Client;
 r.context.models = weave.weave;
 r.context.pbToObj = weave.pbToObj;
-r.context.buildSendTx = weave.buildSendTx;
+r.context.buildSendTx = buildSendTx;
 r.context.loadKeys = loadKeys;
 r.context.pprint = o => console.log(JSON.stringify(o, null, 2));
 r.context.queryAccount = queryAccount;

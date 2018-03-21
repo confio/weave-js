@@ -16,6 +16,14 @@ function makeSignatures(sender, bz, chainID) {
     return [std];
 }
 
+// calculates sign bytes, creates a signature and returns serialized tx (as buffer)
+// TODO: handle multi-sigs
+function signTx(Tx, tx, sender, chainID) {
+    let bz = Tx.encode(tx).finish();
+    tx.signatures = makeSignatures(sender, bz, chainID);
+    return Tx.encode(tx).finish();
+}
+
 // buildSendTx constructs a sendMsg to move tokens from the sender to rcpt
 // Tx - the app-specific Tx wrapper. We assume they use StdSignature, 
 //      and support sendMsg, but are quite flexible about the rest
@@ -34,13 +42,7 @@ function buildSendTx(Tx, sender, rcpt, amount, currency, chainID) {
     let tx = Tx.create({
         sendMsg: msg
     });
-    let bz = Tx.encode(tx).finish();
-
-    // sign it (with chain-id)
-    tx.signatures = makeSignatures(sender, bz, chainID);
-
-    let txbz = Tx.encode(tx).finish();
-    return txbz;
+    return signTx(Tx, tx, sender, chainID);
 }
 
 exports.KeyBase = KeyBase;
@@ -50,3 +52,4 @@ exports.pbToObj = pbToObj;
 exports.weave = weave;
 exports.loadJSON = loadJSON;
 exports.buildSendTx = buildSendTx;
+exports.signTx = signTx;

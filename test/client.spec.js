@@ -138,7 +138,6 @@ describe('Test client against mycoind', () => {
             txresp = await client.sendTx(tx)
         } catch (err) {
             // report what we got and fail
-            console.log(err);
             expect(err).toBeNull();
         }
 
