@@ -16,17 +16,30 @@ const getAddr = key => ({address: key.slice(5).toString('hex')});
 const queryAccount = (client, acct) => client.queryParseOne(acct, "/wallets", weave.weave.cash.Set, getAddr);
 const querySigs = (client, acct) => client.queryParseOne(acct, "/auth", weave.weave.sigs.UserData, getAddr);
 
-let r = repl.start("> ");
+let r = repl.start({prompt: "> ", useColors: true, ignoreUndefined: true})
+    // if we have a client object with default name, shutdown websocket on exit
+    .on('exit', () => {
+        let cl = r.context.client;
+        if (cl && cl.close) {
+            cl.close();
+            console.log("disconnected...");
+        }
+    });
 // wraps the eval loop to provide async/await support
 stubber(r);
 
-r.context.help = () => {
-    console.log(`Use KeyBase.setup() or loadKeys(file) and new Client(uri).
-buildSendTx() and queryAcct() may also be quite helpful.
+r.defineCommand('help', function() {
+    console.log(`\nPass filename or use "let keys = loadKeys(file)"
+Construct client with "let client = new Client(uri)"
+Go to https://github.com/confio/weave-js for more documentation.
 
-Go to https://github.com/confio/weave-js for more documentation.`);
-    return Object.keys(r.context).slice(12);
-}
+Available resources:`);
+    console.log(Object.keys(this.context).slice(12).join("\n"));
+    console.log("");
+    this.displayPrompt();
+});
+
+// here are useful context objects
 r.context.KeyBase = weave.KeyBase;
 r.context.Client = weave.Client;
 r.context.models = weave.weave;
@@ -41,7 +54,11 @@ r.context.querySigs = querySigs;
 // TODO: better cli parsing
 let args = process.argv.slice(2);
 if (args.length > 0) {
-    loadKeys(args[0])
+    let file = args[0];
+    loadKeys(file)
         .then(keys => {r.context.keys = keys;})
-        .then(() => process.stdout.write("Keys loaded\n> "));
+        .then(() => {
+            console.log("Keys loaded from " + file);
+            r.displayPrompt();
+        });
 }
