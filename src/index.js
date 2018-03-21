@@ -29,7 +29,6 @@ function buildSendTx(Tx, sender, rcpt, amount, currency, chainID) {
 
     // sign it (with chain-id)
     let {sig, seq} = sender.sign(bz, chainID);
-    expect(seq).toBe(0);
     let std = weave.sigs.StdSignature.create({
         pubKey: sender.pubkey,
         signature: sig

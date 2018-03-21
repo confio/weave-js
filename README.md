@@ -69,13 +69,40 @@ mycoind start
 let client = new Client()
 let demo = keys.get("demo");
 
-const getAddr = (key) => ({address: key.slice(5).toString('hex')});
-let acct = await client.queryParseOne(demo.address(), "/wallets", models.cash.Set, getAddr);
+let acct = await queryAccount(client, demo.address());
 pprint(acct);
+```
 
+### Sending Cash
+
+Now it's time to make a transaction on the blockchain. Here goes nothing!
+
+`yarn cli /tmp/demo.db`:
+
+```js
+let client = new Client()
+let demo = keys.get("demo");
+let rcpt = keys.add("rcpt");
+let chainID = await client.chainID();
+
+let tx = buildSendTx(models.app.Tx, demo, rcpt.address(), 5000, 'CASH', chainID);
+let resp = await client.sendTx(tx);
+pprint(resp);
+
+let acctRcpt = await queryAccount(client, rcpt.address());
+pprint(acctRcpt);
+let acctSend = await queryAccount(client, demo.address());
+pprint(acctSend);
+
+// try to send cash back
+tx = buildSendTx(models.app.Tx, rcpt, demo.address(), 1500, 'CASH', chainID);
+await client.sendTx(tx);
+acctRcpt = await queryAccount(client, rcpt.address());
+pprint(acctRcpt);
+
+// this save rcpt and updates demo's sequence for next send
+await keys.save();  
 // to quit cleanly, you need to shut down the websocket first
 await client.close();
 ^d
 ```
-
-**TODO: add sending cash**
