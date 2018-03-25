@@ -3,7 +3,7 @@
 const repl = require("repl");
 const weave = require("../lib/weave.node.js");
 const leveldown = require("leveldown");
-const getArgs = require('./args')
+const {getArgs, deepGet} = require('./args')
 
 // note: this is only on master, not yet in 0.3 on npm
 const stubber = require("async-repl/stubber");
@@ -41,11 +41,26 @@ r.defineCommand('help', function(name) {
         Available resources:`);
         console.log(Object.keys(this.context).slice(12).join("\n"));
     } else {
-        // TODO: verify if it is a function...
-        // TODO: parse out dot notation (so we can ".help keys.add")
-        let fn = this.context[name];
-        let args = getArgs(fn);
-        console.log("Usage: " + fn.name + "(" + args.join(", ") + ")");
+        // parse out dot notation (so we can ".help keys.add")
+        let fn = deepGet(this.context, name);
+        if (fn) {
+            if (typeof fn == 'function') {
+                let args = getArgs(fn);
+                console.log("Usage: " + fn.name + "(" + args.join(", ") + ")");
+            } else if (typeof fn == 'object') {
+                let props = Object.getOwnPropertyNames(fn);
+                let p = Object.getPrototypeOf(fn);
+                let methods = Object.getOwnPropertyNames(p);
+                console.log("Properties:")
+                console.log("  " + props.join(", "));
+                console.log("Methods:")
+                console.log("  " + methods.join(", "));
+            } else {
+                console.log(fn)
+            }
+        } else {
+            console.log("Unknown");
+        }
     }
     console.log("");
     this.displayPrompt();
