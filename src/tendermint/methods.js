@@ -1,6 +1,7 @@
 module.exports = [
   'subscribe',
   'unsubscribe',
+  'unsubscribe_all',
 
   'status',
   'net_info',

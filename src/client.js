@@ -71,28 +71,31 @@ export class Client {
     // search constructs a /tx_search query with bucket=<hex key>
     // as set by KeyTagger in weave
     search(bucket, key) {
+        // doc: search for any tx that matches these tags
         if (typeof key !== 'string') {
             key = key.toString('hex');
         }
         key = key.toUpperCase();
         const query = bucket + "='" + key + "'";
+        console.log("search: " + query);
+        // TODO: this doesn't return the tx hash!
+        // should we calculate it and add it??
         return this.client.txSearch({query});
     }
 
     // searchParse will call search and extract all Tx bytes into proper Tx
     // if Data is provided, it will parse the tx result as a protobuf message,
     // otherwise treat it as raw bytes.
-    // 
+    //
     // all bytes are left as unencoded buffers for later manipulation,
     // you must encode them as hex/base64 for json output
     //
     // TODO: do we want to do something like this???
     // Buffer.prototype.toJSON = function () {return this.toString("hex")};
     async searchParse(bucket, key, Tx, opts) {
-        if (!opts) {
+        if (opts === undefined) {
             opts = {longs: Number};
         }
-
         let res = await this.search(bucket, key);
         if (!res || res.length === 0) {
             return [];
@@ -179,5 +182,39 @@ export class Client {
         }
         return {height, parsed: parsed[0]};
     }
-}
 
+    //// subscriptions /////
+
+    unsubscribe(query) {
+        if (query) {
+            // TODO: support per-query....
+            console.log("per-query unsubscribe unclear in tendermint")
+        }
+        return this.client.unsubscribeAll();
+    }
+
+    subscribeHeaders(cb) {
+        const query = "tm.event = 'NewBlock'";
+        return this.client.subscribe({query}, cb);
+    }
+
+    subscribeTx(bucket, key, cb) {
+        // doc: subscribeTx accepts arsg like search,
+        // doc: will trigger cb on each incoming tx that matches
+        // doc: search for any tx that matches these tags
+        if (typeof key !== 'string') {
+            key = key.toString('hex');
+        }
+        key = key.toUpperCase();
+        const match = bucket + "='" + key + "'";
+        const query = "tm.event = 'Tx' AND " + match;
+        console.log("subscribe: " + query);
+        return this.client.subscribe({query}, cb);
+    }
+
+    subscribeAllTx(cb) {
+        const query = "tm.event = 'Tx'";
+        console.log("subscribe: " + query);
+        return this.client.subscribe({query}, cb);
+    }
+}

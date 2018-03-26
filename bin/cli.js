@@ -18,6 +18,8 @@ const queryAccount = (client, acct) => client.queryParseOne(acct, "/wallets", we
 const queryAccountByName = (client, name) => client.queryParseOne(Buffer.from(name), "/wallets/name", weave.weave.cash.Set, getAddr);
 const querySigs = (client, acct) => client.queryParseOne(acct, "/auth", weave.weave.sigs.UserData, getAddr);
 const buildSendTx = (sender, rcpt, amount, currency, chainID) => weave.buildSendTx(weave.weave.app.Tx, sender, rcpt, amount, currency, chainID);
+const searchTx = (client, addr) => client.searchParse("cash", addr, weave.weave.app.Tx)
+const searchMyTx = (client, addr) => client.searchParse("sigs", addr, weave.weave.app.Tx)
 
 let r = repl.start({prompt: "> ", useColors: true, ignoreUndefined: true})
     // if we have a client object with default name, shutdown websocket on exit
@@ -72,6 +74,8 @@ r.context.pprint = o => console.log(JSON.stringify(o, null, 2));
 r.context.queryAccount = queryAccount;
 r.context.queryAccountByName = queryAccountByName;
 r.context.querySigs = querySigs;
+r.context.searchTx = searchTx;
+r.context.searchMyTx = searchMyTx;
 
 // load the keys from a leveldb keystore
 // TODO: better cli parsing

@@ -103,8 +103,42 @@ acctRcpt = await queryAccount(client, rcpt.address());
 pprint(acctRcpt);
 
 // this save rcpt and updates demo's sequence for next send
-await keys.save();  
-// to quit cleanly, you need to shut down the websocket first
-await client.close();
+await keys.save();
+^d
+```
+
+
+### Searching and subscribing to tx
+
+We can look up the history and be notified of changes:
+
+`yarn cli /tmp/demo.db`:
+
+```js
+let client = new Client()
+let demo = keys.get("demo");
+let rcpt = keys.get("rcpt");
+let chainID = await client.chainID();
+
+// this returns all tx that modify demo account
+await searchTx(client, demo.address());
+// this returns all tx that demo signed
+await searchMyTx(client, demo.address());
+
+// now, let's try to subscribe to my changes
+let txs = await client.search("cash", demo.address());
+txs.map(x => x.height);
+// this one is never triggered :(
+client.subscribeTx("cash", demo.address(), () => console.log("match"));
+// this one is triggered
+client.subscribeAllTx(pprint);
+
+// send some money
+let tx = buildSendTx(demo, rcpt.address(), 5000, 'CASH', chainID);
+await client.sendTx(tx);
+// to store the new sequence numbers
+await keys.save();
+
+await client.search("cash", demo.address());
 ^d
 ```
