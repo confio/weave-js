@@ -3,7 +3,7 @@
 const repl = require("repl");
 const weave = require("../lib/weave.node.js");
 const leveldown = require("leveldown");
-const {getArgs, deepGet} = require('./args')
+const {defFn, defObj, deepGet, describe} = require('./args')
 
 // note: this is only on master, not yet in 0.3 on npm
 const stubber = require("async-repl/stubber");
@@ -34,30 +34,25 @@ stubber(r);
 r.defineCommand('help', function(name) {
     if (!name) {
         console.log(`\nPass filename or use "let keys = loadKeys(file)"
-        Construct client with "let client = new Client(uri)"
-        Go to https://github.com/confio/weave-js for more documentation.
-        Or try ".help <function>"
+Construct client with "let client = new Client(uri)"
+Go to https://github.com/confio/weave-js for more documentation.
+Or try ".help <function>"
 
-        Available resources:`);
-        console.log(Object.keys(this.context).slice(12).join("\n"));
+Available resources:`);
+        let res = Object.keys(this.context).slice(12).sort()
+            .forEach(k => {
+                let v = this.context[k];
+                if (typeof v === 'function') {
+                    defFn(v).print("  ");
+                } else {
+                    console.log("  " + k + ": " + (typeof v));
+                }
+            });
     } else {
         // parse out dot notation (so we can ".help keys.add")
         let fn = deepGet(this.context, name);
         if (fn) {
-            if (typeof fn == 'function') {
-                let args = getArgs(fn);
-                console.log("Usage: " + fn.name + "(" + args.join(", ") + ")");
-            } else if (typeof fn == 'object') {
-                let props = Object.getOwnPropertyNames(fn);
-                let p = Object.getPrototypeOf(fn);
-                let methods = Object.getOwnPropertyNames(p);
-                console.log("Properties:")
-                console.log("  " + props.join(", "));
-                console.log("Methods:")
-                console.log("  " + methods.join(", "));
-            } else {
-                console.log(fn)
-            }
+            describe(fn);
         } else {
             console.log("Unknown");
         }
