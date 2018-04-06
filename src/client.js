@@ -54,6 +54,19 @@ export class Client {
             .then(status => status.latest_block_height);
     }
 
+    headers(minHeight, maxHeight) {
+        return this.client.blockchain({minHeight, maxHeight});
+    }
+
+    header(height) {
+        return this.headers(height, height)
+            .then(head => head.block_metas[0]);
+    }
+
+    block(height) {
+        return this.client.block({height})
+    }
+
     async sendTx(tx) {
         if (typeof tx !== 'string') {
             tx = tx.toString('base64');
