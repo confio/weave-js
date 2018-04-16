@@ -37,11 +37,13 @@ describe('Crypto primitives', () => {
         const priv = weave.crypto.PrivateKey.decode(goprivkey.pbBuffer()).ed25519;
         const pub = weave.crypto.PublicKey.decode(gopubkey.pbBuffer()).ed25519;
         const msg = Buffer.from(gotx.pbHex, 'hex');
+        const sendMsg = weave.app.Tx.decode(msg).sendMsg;
 
         // make sure we calculate addresses the same as the signature
+        expect(sendMsg.memo).toEqual('Test payment');
         const addr = getAddress(pub);
-        const sigAddr = txSig.address.toString('hex');
-        expect(addr).toEqual(sigAddr);
+        const sendAddr = sendMsg.src.toString('hex');
+        expect(addr).toEqual(sendAddr);
 
         const data = signBytes(msg, gochain, goseq);
 

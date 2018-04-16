@@ -18,6 +18,8 @@ export function initNacl(opts) {
 // returns the address as a hex string
 export function getAddress (pubkey) {
     const hash = shajs('sha256');
+    // this is a prefix for all pubkey signatures
+    hash.update('sigs/ed25519/');
     hash.update(pubkey, 'hex');
     let hex = hash.digest('hex');
     return hex.slice(0, 40);  // 20 bytes
