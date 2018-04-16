@@ -131,10 +131,6 @@
               "type": "crypto.PublicKey",
               "id": 2
             },
-            "address": {
-              "type": "bytes",
-              "id": 3
-            },
             "signature": {
               "type": "crypto.Signature",
               "id": 4
