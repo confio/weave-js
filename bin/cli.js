@@ -15,7 +15,6 @@ function loadKeys(file) {
 
 const getAddr = key => ({address: key.slice(5).toString('hex')});
 const queryAccount = (client, acct) => client.queryParseOne(acct, "/wallets", weave.weave.cash.Set, getAddr);
-const queryAccountByName = (client, name) => client.queryParseOne(Buffer.from(name), "/wallets/name", weave.weave.cash.Set, getAddr);
 const querySigs = (client, acct) => client.queryParseOne(acct, "/auth", weave.weave.sigs.UserData, getAddr);
 const buildSendTx = (sender, rcpt, amount, currency, chainID) => weave.buildSendTx(weave.weave.app.Tx, sender, rcpt, amount, currency, chainID);
 const searchTx = (client, addr) => client.searchParse("cash", addr, weave.weave.app.Tx)
