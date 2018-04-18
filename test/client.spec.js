@@ -208,7 +208,7 @@ describe('Test client against mycoind', () => {
         const amount = 3500;
 
         // construct a tx
-        user.sequence = 5;
+        user.sequence[chainID] = 5;
         let tx = buildSendTx(weave.app.Tx, user, user2.address(), amount, 'MYC', chainID);
         try {
             let txresp = await client.sendTx(tx)

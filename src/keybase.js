@@ -14,7 +14,7 @@ class KeyPair {
         this.algo = algo;
         this.pubkey = pubkey;
         this.secret = secret;
-        this.sequence = 0;
+        this.sequence = {};
     }
 
     pubBytes() {
@@ -40,8 +40,8 @@ class KeyPair {
     // sign returns the signature as well as the sequence number
     // it signed with
     sign(msg, chainID) {
-        let seq = this.sequence
-        this.sequence++;
+        let seq = this.sequence[chainID] || 0;
+        this.sequence[chainID] = seq+1;
         let bz = signBytes(msg, chainID, seq);
         let sig = sign(bz, this.secBytes());
         let wrap = Signature.create();
@@ -105,7 +105,7 @@ export class KeyBase {
         if (this.keys[name]) {
             throw Error("Cannot overwrite key " + name);
         }
-        sequence = sequence || 0;
+        sequence = sequence || {};
         // if they are raw bytes...
         // let res = this.makePair("ed25519", pubkey, secret);
         // if they are already protobuf objects

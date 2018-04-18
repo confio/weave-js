@@ -90,7 +90,6 @@ export class Client {
         }
         key = key.toUpperCase();
         const query = bucket + "='" + key + "'";
-        console.log("search: " + query);
         // TODO: this doesn't return the tx hash!
         // should we calculate it and add it??
         return this.client.txSearch({query});

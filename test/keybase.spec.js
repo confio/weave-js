@@ -24,11 +24,11 @@ describe('Keybase crypto helpers', () => {
         // to check sig (used to generate fixtures)
         const chain = "some-test-id";
         let msg = new Buffer("hello world, this is important");
-        expect(one.sequence).toBe(0)
-        one.sequence = 33;
+        expect(one.sequence).toEqual({})
+        one.sequence[chain] = 33;
         let {sig, seq} = one.sign(msg, chain, seq);
         expect(seq).toBe(33);
-        expect(one.sequence).toBe(34);
+        expect(one.sequence[chain]).toBe(34);
         expect(one.verify(msg, sig, chain, seq)).toBe(true);
         expect(one.verify(msg, sig, chain, seq+1)).toBe(false);
 
@@ -42,9 +42,10 @@ describe('Keybase crypto helpers', () => {
     });
 
     it('Check KeyPair ser/deser', async () => {
+        const chain = "random-chain";
         let keybase = await KeyBase.setup();
         let orig = keybase.add('orig');
-        orig.sequence = 22;
+        orig.sequence[chain] = 22;
 
         let ser = orig.stringify();
         let {pub, sec, seq} = keybase.parse(ser);
