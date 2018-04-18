@@ -19,10 +19,19 @@ export function initNacl(opts) {
 export function getAddress (pubkey) {
     const hash = shajs('sha256');
     // this is a prefix for all pubkey signatures
-    hash.update('sigs/ed25519/');
-    hash.update(pubkey, 'hex');
-    let hex = hash.digest('hex');
-    return hex.slice(0, 40);  // 20 bytes
+    let id = getIdentifier(pubkey);
+    hash.update(id);
+    return hash.digest('hex').slice(0, 40);  // 20 bytes
+}
+
+// getAddress accepts pubkey as a hex-formatted string or a Buffer
+// returns the identifier as a Buffer
+export function getIdentifier(pubkey) {
+    let prefix = Buffer.from('sigs/ed25519/');
+    if (typeof pubkey === 'string') {
+        pubkey = Buffer.from(pubkey, 'hex');
+    }
+    return Buffer.concat([prefix, pubkey]);
 }
 
 // generateKeyPair creates a private/public key pair

@@ -1,7 +1,7 @@
 /* jshint esversion: 6 */
 
 import { weave , pbToObj, objToPB} from './proto';
-import { initNacl, generateKeyPair, signBytes, sign, verify, getAddress } from './crypto';
+import { initNacl, generateKeyPair, signBytes, sign, verify, getAddress, getIdentifier } from './crypto';
 
 let Signature = weave.crypto.Signature;
 let PublicKey = weave.crypto.PublicKey;
@@ -31,6 +31,10 @@ class KeyPair {
 
     addressBytes() {
         return new Buffer(this.address(), 'hex');
+    }
+
+    identifier() {
+        return getIdentifier(this.pubBytes());
     }
 
     // sign returns the signature as well as the sequence number
