@@ -81,17 +81,16 @@ export class Client {
         return {hash: resp.hash, height: resp.height};
     }
 
-    // search constructs a /tx_search query with bucket=<hex key>
-    // as set by KeyTagger in weave
+    // search constructs a /tx_search query.
+    // bucket is a prefix, appended with ":", and hex decoded key
+    // the whole reconstructed key is converted into upper-case
+    // hex...
+    //
+    // This makes the api usable and I hope in the future I can use
+    // bucket=<hex key> format (when tendermint supports multiple
+    // tags with same key)
     search(bucket, key) {
-        // doc: search for any tx that matches these tags
-        if (typeof key !== 'string') {
-            key = key.toString('hex');
-        }
-        key = key.toUpperCase();
-        const query = bucket + "='" + key + "'";
-        // TODO: this doesn't return the tx hash!
-        // should we calculate it and add it??
+        const query = tagToQuery(bucket, key);
         return this.client.txSearch({query});
     }
 
@@ -214,19 +213,25 @@ export class Client {
         // doc: subscribeTx accepts arsg like search,
         // doc: will trigger cb on each incoming tx that matches
         // doc: search for any tx that matches these tags
-        if (typeof key !== 'string') {
-            key = key.toString('hex');
-        }
-        key = key.toUpperCase();
-        const match = bucket + "='" + key + "'";
+        const match = tagToQuery(bucket, key);
         const query = "tm.event = 'Tx' AND " + match;
-        console.log("subscribe: " + query);
+        // console.log("subscribe: " + query);
         return this.client.subscribe({query}, cb);
     }
 
     subscribeAllTx(cb) {
         const query = "tm.event = 'Tx'";
-        console.log("subscribe: " + query);
+        // console.log("subscribe: " + query);
         return this.client.subscribe({query}, cb);
     }
+}
+
+function tagToQuery(bucket, key) {
+        const b = Buffer.from(bucket);
+        const k = Buffer.from(key, 'hex');
+        const sep = Buffer.from(":");
+        let tag = Buffer.concat([b, sep, k]);
+        tag = tag.toString('hex').toUpperCase();
+        const query = tag + "='s'";
+        return query;
 }

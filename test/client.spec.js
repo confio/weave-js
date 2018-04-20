@@ -25,6 +25,9 @@ describe('Test client against mycoind', () => {
     let user, user2;
     let client;
 
+    let txOne = 0;
+    let txTwo = 0;
+
     // set up server
     beforeAll(async () => {
         await run('rm', ['-rf', homeDir])
@@ -61,8 +64,8 @@ describe('Test client against mycoind', () => {
         await sleep(100);
         tm.kill();
         abci.kill();
-        // console.log(abciLog.getContentsAsString('utf8'));
-        console.log(tmLog.getContentsAsString('utf8'));
+        console.log(abciLog.getContentsAsString('utf8'));
+        // console.log(tmLog.getContentsAsString('utf8'));
     })
 
     it('Check status works', async () => {
@@ -114,7 +117,6 @@ describe('Test client against mycoind', () => {
         // let obj = parse(match[0].value);
         // console.log(obj);
 
-
         const getAddr = (key) => ({address: key.slice(5).toString('hex')});
         expect(getAddr(match[0].key).address).toEqual(addr);
 
@@ -132,6 +134,9 @@ describe('Test client against mycoind', () => {
         let Set = weave.cash.Set;
         let txresp;
 
+        client.subscribeTx("cash", user.address(), () => txOne++)
+        client.subscribeTx("cash", user2.address(), () => txTwo++)
+
         // post it to server
         let tx = buildSendTx(weave.app.Tx, user, user2.address(), amount, 'MYC', chainID);
         try {
@@ -143,6 +148,10 @@ describe('Test client against mycoind', () => {
 
         // wait for one block
         await client.waitForBlock(txresp.height+1)
+
+        // check subscriptions were called
+        expect(txOne).toBe(1);
+        expect(txTwo).toBe(1);
 
         // query states
         let {parsed: sender} = await client.queryParseOne(user.address(), "/wallets", Set, getAddr);
@@ -160,7 +169,7 @@ describe('Test client against mycoind', () => {
 
         // query for the tx
         const txRes = await client.searchParse("cash", user.address(), weave.app.Tx)
-            .catch(err => pprint(err))
+            // .catch(err => pprint(err))
         expect(txRes.length).toBe(1);
         expect(txRes[0].height).toBeGreaterThan(3);
         let found = txRes[0].tx;
@@ -168,6 +177,7 @@ describe('Test client against mycoind', () => {
         expect(found.sendMsg.src.toString('hex')).toEqual(user.address());
         expect(found.sendMsg.dest.toString('hex')).toEqual(user2.address());
         expect(found.sendMsg.amount.whole).toEqual(amount);
+
     })
 
     it('Send second tx', async () => {
@@ -196,6 +206,10 @@ describe('Test client against mycoind', () => {
             // report what we got and fail
             expect(err).toBeNull();
         }
+
+        // check subscriptions were called
+        expect(txOne).toBe(2);
+        expect(txTwo).toBe(2);
 
         // make sure the money arrived
         let {parsed} = await client.queryParseOne(user2.address(), "/wallets", weave.cash.Set, getAddr);
