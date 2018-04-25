@@ -91,6 +91,7 @@ export class Client {
     // tags with same key)
     search(bucket, key) {
         const query = tagToQuery(bucket, key);
+        // console.log("search: " + query);
         return this.client.txSearch({query});
     }
 
