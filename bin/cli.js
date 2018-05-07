@@ -71,7 +71,6 @@ r.context.buildSendTx = buildSendTx;
 r.context.loadKeys = loadKeys;
 r.context.pprint = o => console.log(JSON.stringify(o, null, 2));
 r.context.queryAccount = queryAccount;
-r.context.queryAccountByName = queryAccountByName;
 r.context.querySigs = querySigs;
 r.context.searchTx = searchTx;
 r.context.searchMyTx = searchMyTx;
