@@ -78,7 +78,7 @@ export class Client {
         if (resp.deliver_tx.code) {
             throw perr(resp.deliver_tx);
         }
-        return {hash: resp.hash, height: resp.height};
+        return {hash: resp.hash, height: resp.height, deliver_tx: resp.deliver_tx};
     }
 
     // search constructs a /tx_search query.
