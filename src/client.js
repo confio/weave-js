@@ -89,8 +89,8 @@ export class Client {
     // This makes the api usable and I hope in the future I can use
     // bucket=<hex key> format (when tendermint supports multiple
     // tags with same key)
-    search(bucket, key) {
-        const query = tagToQuery(bucket, key);
+    search(bucket, key, value) {
+        const query = tagToQuery(bucket, key, value);
         // console.log("search: " + query);
         return this.client.txSearch({query});
     }
@@ -104,11 +104,11 @@ export class Client {
     //
     // TODO: do we want to do something like this???
     // Buffer.prototype.toJSON = function () {return this.toString("hex")};
-    async searchParse(bucket, key, Tx, opts) {
+    async searchParse(bucket, key, Tx, value, opts) {
         if (opts === undefined) {
             opts = {longs: Number};
         }
-        let res = await this.search(bucket, key);
+        let res = await this.search(bucket, key, value);
         if (!res || res.length === 0) {
             return [];
         }
@@ -227,12 +227,12 @@ export class Client {
     }
 }
 
-function tagToQuery(bucket, key) {
+function tagToQuery(bucket, key, value = 's') {
         const b = Buffer.from(bucket);
         const k = Buffer.from(key, 'hex');
         const sep = Buffer.from(":");
         let tag = Buffer.concat([b, sep, k]);
         tag = tag.toString('hex').toUpperCase();
-        const query = tag + "='s'";
+        const query = `${tag}='${value}'`;
         return query;
 }
