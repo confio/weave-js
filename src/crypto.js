@@ -28,9 +28,7 @@ export function getAddress (pubkey) {
 // returns the identifier as a Buffer
 export function getIdentifier(pubkey) {
     let prefix = Buffer.from('sigs/ed25519/');
-    if (typeof pubkey === 'string') {
         pubkey = Buffer.from(pubkey, 'hex');
-    }
     return Buffer.concat([prefix, pubkey]);
 }
 
