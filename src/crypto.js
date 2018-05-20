@@ -54,8 +54,10 @@ export function signBytes(msg, chainID, seq) {
     extra.writeUInt32BE(high, chainID.length);
     extra.writeUInt32BE(seq%thirtyTwo, chainID.length+4);
 
-    const total = msg.length + extra.length;
-    const res = Buffer.concat([msg, extra], total);
+    // ensure Buffer type
+    const msgBuf = Buffer.from(msg);
+    const total = msgBuf.length + extra.length;
+    const res = Buffer.concat([msgBuf, extra], total);
     return res;
 }
 
