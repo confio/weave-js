@@ -1,14 +1,14 @@
-'use strict'
+/* jshint esversion: 6 */
 
-const EventEmitter = require('events')
-const axios = require('axios')
-const url = require('url')
-const old = require('old')
-const camel = require('camelcase')
-const websocket = require('websocket-stream')
-const ndjson = require('ndjson')
-const pumpify = require('pumpify').obj
-const tendermintMethods = require('./methods.js')
+const EventEmitter = require('events');
+const axios = require('axios');
+const url = require('url');
+const old = require('old');
+const camel = require('camelcase');
+const websocket = require('websocket-stream');
+const ndjson = require('ndjson');
+const pumpify = require('pumpify').obj;
+const tendermintMethods = require('./methods.js');
 
 function convertArgs (args) {
   args = args || {}
@@ -20,24 +20,28 @@ function convertArgs (args) {
       args[k] = '0x' + Buffer.from(v).toString('hex')
     }
   }
-  return args
+  return args;
 }
 
 class Client extends EventEmitter {
   constructor (uriString = 'localhost:46657') {
-    super()
-    let uri = url.parse(uriString)
-    if (uri.protocol !== 'http:' && uri.protocol !== 'ws:') {
-      uri = url.parse(`http://${uriString}`)
+    super();
+    let uri = url.parse(uriString);
+    if (uri.protocol === '') {
+      uri = url.parse(`http://${uriString}`);
     }
-    if (uri.protocol === 'ws:') {
-      this.websocket = true
-      this.uri = `ws://${uri.hostname}:${uri.port}/websocket`
-      this.call = this.callWs
+    if ((uri.protocol === 'ws:') || (uri.protocol === 'wss:')) {
+      const port = uri.port || (uri.protocol === 'ws:' ? 80: 443);
+      this.websocket = true;
+      this.uri = `${uri.protocol}//${uri.hostname}:${port}/websocket`;
+      this.call = this.callWs;
       this.connectWs()
-    } else if (uri.protocol === 'http:') {
-      this.uri = `http://${uri.hostname}:${uri.port}/`
-      this.call = this.callHttp
+    } else if ((uri.protocol === 'http:') || (uri.protocol === 'https:')) {
+      const port = uri.port || (uri.protocol === 'http:' ? 80: 443);
+      this.uri = `${uri.protocol}//${uri.hostname}:${port}/`;
+      this.call = this.callHttp;
+    } else {
+      throw(new Error('unknown protocol: ' + uriString));
     }
   }
 
@@ -45,7 +49,7 @@ class Client extends EventEmitter {
     this.ws = pumpify(
       ndjson.stringify(),
       websocket(this.uri)
-    )
+    );
     this.ws.on('error', (err) => this.emit('error', err))
     this.ws.on('close', () => this.emit('error', Error('websocket disconnected')))
     this.ws.on('data', (data) => {
