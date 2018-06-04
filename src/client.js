@@ -51,7 +51,7 @@ export class Client {
 
     height() {
         return this.client.status()
-            .then(status => status.latest_block_height);
+            .then(status => status.sync_info.latest_block_height);
     }
 
     headers(minHeight, maxHeight) {
