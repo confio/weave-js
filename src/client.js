@@ -93,7 +93,8 @@ export class Client {
     search(bucket, key, value) {
         const query = tagToQuery(bucket, key, value);
         // console.log("search: " + query);
-        return this.client.txSearch({query, per_page: 30}).catch(err => console.log(err));
+        // TODO: we will have to paginate when there are more than enough to fit on one page....
+        return this.client.txSearch({query, per_page: 100}).catch(err => console.log(err));
     }
 
     // searchParse will call search and extract all Tx bytes into proper Tx
