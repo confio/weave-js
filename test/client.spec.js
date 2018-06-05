@@ -149,8 +149,8 @@ describe('Test client against mycoind', () => {
         await client.waitForBlock(txresp.height+1)
 
         // check subscriptions were called
-        // expect(txOne).toBe(1);
-        // expect(txTwo).toBe(1);
+        expect(txOne).toBe(1);
+        expect(txTwo).toBe(1);
 
         // query states
         let {parsed: sender} = await client.queryParseOne(user.address(), "/wallets", Set, getAddr);
@@ -201,8 +201,8 @@ describe('Test client against mycoind', () => {
         }
 
         // check subscriptions were called
-        // expect(txOne).toBe(2);
-        // expect(txTwo).toBe(2);
+        expect(txOne).toBe(2);
+        expect(txTwo).toBe(2);
 
         // make sure the money arrived
         let {parsed} = await client.queryParseOne(user2.address(), "/wallets", weave.cash.Set, getAddr);

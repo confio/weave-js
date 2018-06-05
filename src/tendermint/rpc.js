@@ -53,8 +53,9 @@ class Client extends EventEmitter {
     this.ws.on('error', (err) => this.emit('error', err))
     this.ws.on('close', () => this.emit('error', Error('websocket disconnected')))
     this.ws.on('data', (data) => {
-      data = JSON.parse(data)
-      if (!data.id) return
+      // console.log("data: " + data);
+      data = JSON.parse(data);
+      if (!data.id) { return }
       this.emit(data.id, data.error, data.result)
     })
   }
