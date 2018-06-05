@@ -30,7 +30,8 @@ export class Client {
         this.closed = false;
         // need to handle error somehow, only care if it is not us closing it...
         this.client.on('error', err => {
-            if (!this.closed) console.log("connection:", err);
+          // if (!this.closed) console.log("connection:", err);
+          console.log("connection:", err);
         });
         // load the ResultSet protobuf
     }
@@ -92,7 +93,7 @@ export class Client {
     search(bucket, key, value) {
         const query = tagToQuery(bucket, key, value);
         // console.log("search: " + query);
-        return this.client.txSearch({query});
+        return this.client.txSearch({query, per_page: 30}).catch(err => console.log(err));
     }
 
     // searchParse will call search and extract all Tx bytes into proper Tx
@@ -108,15 +109,15 @@ export class Client {
         if (opts === undefined) {
             opts = {longs: Number};
         }
-        let res = await this.search(bucket, key, value);
-        if (!res || res.length === 0) {
+        let {txs} = await this.search(bucket, key, value);
+        if (!txs || txs.length === 0) {
             return [];
         }
-        let parsed = res.map(({height, tx_result, tx}) => {
+        let parsed = txs.map(({height, tx_result, tx}) => {
             // parse the tx into shape
             tx = pbToObj(Tx, Buffer.from(tx, 'base64'), opts);
             // data is just a raw buffer
-            let data = Buffer.from(tx_result.data, 'base64');
+            let data = Buffer.from(tx_result.data || "", 'base64');
             return {height, tx, data};
         });
         return parsed;
