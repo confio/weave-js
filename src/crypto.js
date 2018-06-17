@@ -41,23 +41,34 @@ export function generateKeyPair() {
     }
 }
 
+const signCodeV1 = Buffer.from([0, 0xca, 0xfe, 0]);
 
 // signBytes takes raw message byters and append replay-protection info
 // to determine the bytes we need to sign.
 // returns a Buffer with the bytes to sign
+//
+// As specified in https://github.com/confio/weave/issues/70,
+// we use the following format:
+//
+// version | len(chainID) | chainID      | nonce             | signBytes
+// 4bytes  | uint8        | ascii string | int64 (bigendian) | serialized transaction
 export function signBytes(msg, chainID, seq) {
+    // split the nonce (seq) into two uint32 to be writen
     const thirtyTwo = (2**32);
-    const extra = Buffer.alloc(chainID.length + 8);
-    let high = Math.floor(seq/thirtyTwo)
+    const highNonce = Math.floor(seq/thirtyTwo)
+    const lowNonce = seq%thirtyTwo
 
-    extra.write(chainID);
-    extra.writeUInt32BE(high, chainID.length);
-    extra.writeUInt32BE(seq%thirtyTwo, chainID.length+4);
+    const extra = Buffer.alloc(chainID.length+8+1);
+
+    extra.writeUInt8(chainID.length%256, 0);
+    extra.write(chainID, 1);
+    extra.writeUInt32BE(highNonce, chainID.length+1);
+    extra.writeUInt32BE(lowNonce, chainID.length+5);
 
     // ensure Buffer type
     const msgBuf = Buffer.from(msg);
-    const total = msgBuf.length + extra.length;
-    const res = Buffer.concat([msgBuf, extra], total);
+    const total = msgBuf.length + extra.length + 4;
+    const res = Buffer.concat([signCodeV1, extra, msgBuf], total);
     return res;
 }
 
