@@ -6,7 +6,7 @@ import path from "path";
 import util from 'util';
 import {WritableStreamBuffer} from 'stream-buffers';
 
-import {KeyBase, Client, pbToObj, weave, buildSendTx} from '../src';
+import {KeyBase, Client, pbToObj, weave, buildSendTx, parseNumber} from '../src';
 
 const run = util.promisify(execFile);
 
@@ -174,14 +174,16 @@ describe('Test client against mycoind', () => {
     })
 
     it('Send second tx', async () => {
-        const amount = 3500;
+        const amount = 3500.789;
+        const {whole, fractional} = parseNumber(amount);
 
         // construct a tx
         let tx = buildSendTx(weave.app.Tx, user, user2.address(), amount, 'MYC', chainID);
 
         // parse and verify it
         let deser = weave.app.Tx.decode(tx);
-        expect(deser.sendMsg.amount.whole.toInt()).toBe(amount);
+        expect(deser.sendMsg.amount.whole.toInt()).toBe(whole);
+        expect(deser.sendMsg.amount.fractional.toInt()).toBe(fractional);
         expect(deser.signatures.length).toBe(1);
         let sig = deser.signatures[0];
         expect(sig.sequence.toInt()).toBe(1);
@@ -208,7 +210,8 @@ describe('Test client against mycoind', () => {
         let {parsed} = await client.queryParseOne(user2.address(), "/wallets", weave.cash.Set, getAddr);
         expect(parsed.address).toEqual(user2.address());
         expect(parsed.coins.length).toEqual(1);
-        expect(parsed.coins[0].whole).toEqual(amount+50000);
+        expect(parsed.coins[0].whole).toEqual(whole+50000);
+        expect(parsed.coins[0].fractional).toEqual(fractional);
     });
 
     it('Tx with bad sequence fails', async () => {
