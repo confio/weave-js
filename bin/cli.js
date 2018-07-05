@@ -3,7 +3,7 @@
 const repl = require("repl");
 const weave = require("../lib/weave.node.js");
 const leveldown = require("leveldown");
-const {defFn, defObj, deepGet, describe} = require('./args')
+const {defFn, defObj, deepGet, describe} = require('./args');
 
 // note: this is only on master, not yet in 0.3 on npm
 const stubber = require("async-repl/stubber");
@@ -17,8 +17,9 @@ const getAddr = key => ({address: key.slice(5).toString('hex')});
 const queryAccount = (client, acct) => client.queryParseOne(acct, "/wallets", weave.weave.cash.Set, getAddr);
 const querySigs = (client, acct) => client.queryParseOne(acct, "/auth", weave.weave.sigs.UserData, getAddr);
 const buildSendTx = (sender, rcpt, amount, currency, chainID) => weave.buildSendTx(weave.weave.app.Tx, sender, rcpt, amount, currency, chainID);
-const searchTx = (client, addr) => client.searchParse("cash", addr, weave.weave.app.Tx)
-const searchMyTx = (client, addr) => client.searchParse("sigs", addr, weave.weave.app.Tx)
+const buildFractionalSendTx = (sender, rcpt, whole, fractional, currency, chainID) => weave.buildFractionalSendTx(weave.weave.app.Tx, sender, rcpt, whole, fractional, currency, chainID);
+const searchTx = (client, addr) => client.searchParse("cash", addr, weave.weave.app.Tx);
+const searchMyTx = (client, addr) => client.searchParse("sigs", addr, weave.weave.app.Tx);
 
 let r = repl.start({prompt: "> ", useColors: true, ignoreUndefined: true})
     // if we have a client object with default name, shutdown websocket on exit
@@ -68,6 +69,7 @@ r.context.Client = weave.Client;
 r.context.models = weave.weave;
 r.context.pbToObj = weave.pbToObj;
 r.context.buildSendTx = buildSendTx;
+r.context.buildFractionalSendTx = buildFractionalSendTx;
 r.context.loadKeys = loadKeys;
 r.context.pprint = o => console.log(JSON.stringify(o, null, 2));
 r.context.queryAccount = queryAccount;
