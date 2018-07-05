@@ -14,6 +14,24 @@ function parseResultSet(data) {
     return ResultSet.decode(data).results;
 }
 
+// parseQueryResponse takes the {key, value} fields from the rpc
+// response and parses into a list of the expected model type.
+//
+// The model passed in should be a protobuf definition from weave.*
+export const parseQueryResponseRaw = (key, value) => {
+  const keys = parseResultSet(key);
+  const values = parseResultSet(value);
+  if (keys.length !== values.length) {
+      throw Error("Got " + keys.length + " keys but " + values.length + " values");
+  }
+  const results = keys.map((key, i) => ({key, value: values[i]}));
+  return results;
+};
+
+// parseModel takes a protbuf model and an encoded Buffer and returns an
+// object that represents this
+export const parseModel = (model, val) => model.toObject(model.decode(val), {longs: Number});
+
 // let DefaultURI = "http://localhost:46657";
 let DefaultURI = "ws://localhost:46657";
 
@@ -161,13 +179,7 @@ export class Client {
         }
 
         // now parse them both and join....
-        let keys = parseResultSet(q.key);
-        let values = parseResultSet(q.value);
-        if (keys.length !== values.length) {
-            throw Error("Got " + keys.length + " keys but " + values.length + " values");
-        }
-
-        let results = keys.map((key, i) => ({key, value: values[i]}));
+        const results = parseQueryResponseRaw(q.key, q.value);
         return {height, results};
     }
 
@@ -176,12 +188,11 @@ export class Client {
     // from the key. If no keyMap given, then key is returned unmodified under _key
     async queryParse(data, path, model, keyMap) {
         keyMap = keyMap || defaultKeyMap;
-        const parse = (val) => model.toObject(model.decode(val), {longs: Number})
 
         let {height, results} = await this.query(data, path);
         let parsed = results.map((res) => {
             let k = keyMap(res.key);
-            let v = parse(res.value);
+            let v = parseModel(model, res.value);
             return Object.assign(k, v)
         });
         return {height, parsed};
