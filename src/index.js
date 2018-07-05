@@ -35,14 +35,18 @@ function signTx(Tx, tx, sender, chainID) {
 function buildSendTx(Tx, sender, rcpt, amount, currency, chainID) {
     rcpt = Buffer.from(rcpt, 'hex');  // may be bytes or a hex string
     const parsed = parseNumber(amount);
+    // javascript will include fractional: 0 in the serialized format
+    // golang will not encode "empty" fields (0, "", [])
+    // we must pass in undefined not 0 so the signatures match
+    let coin = {
+      whole: parsed.whole || undefined, 
+      fractional: parsed.fractional || undefined, 
+      ticker: currency
+    };
     let msg = weave.cash.SendMsg.create({
         src: sender.addressBytes(),
         dest: rcpt,
-        amount: weave.x.Coin.create({
-          whole: parsed.whole, 
-          fractional: parsed.fractional, 
-          ticker: currency
-        })
+        amount: weave.x.Coin.create(coin)
     });
     let tx = Tx.create({
         sendMsg: msg
