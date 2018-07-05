@@ -34,10 +34,15 @@ function signTx(Tx, tx, sender, chainID) {
 // chainID - chainID to send on (included in tx signature)
 function buildSendTx(Tx, sender, rcpt, amount, currency, chainID) {
     rcpt = Buffer.from(rcpt, 'hex');  // may be bytes or a hex string
+    const parsed = parseNumber(amount);
     let msg = weave.cash.SendMsg.create({
         src: sender.addressBytes(),
         dest: rcpt,
-        amount: weave.x.Coin.create({whole: amount, ticker: currency})
+        amount: weave.x.Coin.create({
+          whole: parsed.whole, 
+          fractional: parsed.fractional, 
+          ticker: currency
+        })
     });
     let tx = Tx.create({
         sendMsg: msg
@@ -70,6 +75,14 @@ function buildFractionalSendTx(Tx, sender, rcpt, whole, fractional, currency, ch
   return signTx(Tx, tx, sender, chainID);
 }
 
+function parseNumber(num) {
+  if (num < 0) {
+    throw new Error("parseNumber only implemented for non-negative numbers")
+  }
+  const whole = Math.floor(num);
+  const fractional = Math.round((num - whole) * 1000000000);
+  return {whole, fractional};
+}
 
 exports.KeyBase = KeyBase;
 exports.Client = Client;
@@ -80,3 +93,4 @@ exports.loadJSON = loadJSON;
 exports.buildSendTx = buildSendTx;
 exports.buildFractionalSendTx = buildFractionalSendTx;
 exports.signTx = signTx;
+exports.parseNumber = parseNumber;
