@@ -34,15 +34,58 @@ function signTx(Tx, tx, sender, chainID) {
 // chainID - chainID to send on (included in tx signature)
 function buildSendTx(Tx, sender, rcpt, amount, currency, chainID) {
     rcpt = Buffer.from(rcpt, 'hex');  // may be bytes or a hex string
+    const parsed = parseNumber(amount);
+    // javascript will include fractional: 0 in the serialized format
+    // golang will not encode "empty" fields (0, "", [])
+    // we must pass in undefined not 0 so the signatures match
+    let coin = {
+      whole: parsed.whole || undefined, 
+      fractional: parsed.fractional || undefined, 
+      ticker: currency
+    };
     let msg = weave.cash.SendMsg.create({
         src: sender.addressBytes(),
         dest: rcpt,
-        amount: weave.x.Coin.create({whole: amount, ticker: currency})
+        amount: weave.x.Coin.create(coin)
     });
     let tx = Tx.create({
         sendMsg: msg
     });
     return signTx(Tx, tx, sender, chainID);
+}
+
+
+// buildFractionalSendTx constructs a sendMsg to move tokens from the sender to rcpt.
+// same as buildSendTx except it also accepts fractions.
+//
+// Tx - the app-specific Tx wrapper. We assume they use StdSignature, 
+//      and support sendMsg, but are quite flexible about the rest
+// sender - KeyPair (from KeyBase) to send and sign the tx
+// rcpt - address to receive the message
+// whole - number of tokens to send (whole amount)
+// fractional - number of tokens to send (whole amount)
+// currency - ticker of the tokens to send
+// chainID - chainID to send on (included in tx signature)
+function buildFractionalSendTx(Tx, sender, rcpt, whole, fractional, currency, chainID) {
+  rcpt = Buffer.from(rcpt, 'hex');  // may be bytes or a hex string
+  let msg = weave.cash.SendMsg.create({
+      src: sender.addressBytes(),
+      dest: rcpt,
+      amount: weave.x.Coin.create({whole, fractional, ticker: currency})
+  });
+  let tx = Tx.create({
+      sendMsg: msg
+  });
+  return signTx(Tx, tx, sender, chainID);
+}
+
+function parseNumber(num) {
+  if (num < 0) {
+    throw new Error("parseNumber only implemented for non-negative numbers")
+  }
+  const whole = Math.floor(num);
+  const fractional = Math.round((num - whole) * 1000000000);
+  return {whole, fractional};
 }
 
 exports.KeyBase = KeyBase;
@@ -52,4 +95,6 @@ exports.pbToObj = pbToObj;
 exports.weave = weave;
 exports.loadJSON = loadJSON;
 exports.buildSendTx = buildSendTx;
+exports.buildFractionalSendTx = buildFractionalSendTx;
 exports.signTx = signTx;
+exports.parseNumber = parseNumber;
