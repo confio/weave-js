@@ -1,6 +1,6 @@
 {
   "name": "weave",
-  "version": "0.4.1",
+  "version": "0.5.1",
   "description": "Client library to talk to weave-based blockchain apps",
   "author": "Ethan Frey <ethanfrey@users.noreply.github.com>",
   "license": "Apache-2.0",
